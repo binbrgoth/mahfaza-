@@ -1811,8 +1811,8 @@ async function executeTrade(type) {
 
   const selectedDate = document.getElementById('trade-date').value;
   const displayDate = selectedDate
-    ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('ar-KW')
-    : new Date().toLocaleDateString('ar-KW');
+    ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-GB')
+    : new Date().toLocaleDateString('en-GB');
 
   const trade = {
     id: Date.now(), type, asset, ticker, qty,
@@ -1891,7 +1891,7 @@ function deductFromFunding(assetType, amount) {
     usd: isUSD ? -amount : 0,
     rate: 0,
     note: 'خصم تلقائي - شراء',
-    date: new Date().toLocaleDateString('ar-KW'),
+    date: new Date().toLocaleDateString('en-GB'),
     isDeduction: true
   };
   state.funding.unshift(deduction);
@@ -2168,7 +2168,7 @@ function renderHistory() {
 
           <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:${isBuy ? 'rgba(0,214,143,0.15)' : 'rgba(255,77,103,0.15)'};color:${isBuy ? 'var(--green)' : 'var(--red)'};flex-shrink:0;min-width:38px;text-align:center">${isBuy ? 'شراء' : 'بيع'}</span>
 
-          <span style="color:var(--text-muted);font-size:12px;flex-shrink:0;min-width:72px">${t.date}</span>
+          <span style="color:var(--text-muted);font-size:12px;flex-shrink:0;min-width:72px">${formatDate(t.date)}</span>
 
           <span style="font-weight:700;font-size:13px;flex-shrink:0;min-width:44px;color:${t.asset==='gold' ? 'var(--gold)' : 'var(--blue)'}">${assetSymbol}</span>
 
@@ -2297,7 +2297,7 @@ async function saveEdit() {
 
   const selectedDate = document.getElementById('edit-date').value;
   const displayDate = selectedDate
-    ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('ar-KW')
+    ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-GB')
     : state.trades[idx].date;
 
   const total = qty * price;
@@ -2437,8 +2437,8 @@ async function addFunding() {
   const note = document.getElementById('f-note').value;
   const dateVal = document.getElementById('f-date').value;
   const displayDate = dateVal
-    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('ar-KW')
-    : new Date().toLocaleDateString('ar-KW');
+    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-GB')
+    : new Date().toLocaleDateString('en-GB');
 
   let kwd = 0, usd = 0, rate = 0;
 
@@ -2551,7 +2551,7 @@ function renderFunding() {
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="font-size:11px;font-weight:700;color:${typeColor[f.type]||'var(--gold)'}">${typeLabel[f.type]||'💛 ذهب'}</span>
-            <span style="font-size:12px;color:var(--text-muted)">${f.date}</span>
+            <span style="font-size:12px;color:var(--text-muted)">${formatDate(f.date)}</span>
             ${f.note ? `<span style="font-size:11px;color:var(--text-muted)">· ${f.note}</span>` : ''}
           </div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">
@@ -2640,7 +2640,7 @@ async function saveFundingEdit() {
   const note = document.getElementById('fe-note').value;
   const dateVal = document.getElementById('fe-date').value;
   const displayDate = dateVal
-    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('ar-KW')
+    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-GB')
     : state.funding[idx].date;
 
   let kwd = 0, usd = 0, rate = 0;
@@ -2920,7 +2920,7 @@ function renderCashDetail() {
       ${cashFunding.map((f, i) => `
         <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
           <span style="min-width:24px;color:var(--text-muted)">${i+1}</span>
-          <span style="min-width:100px">${f.date}</span>
+          <span style="min-width:100px">${formatDate(f.date)}</span>
           <span style="flex:1;color:var(--green);font-weight:700">${(+f.kwd).toFixed(3)} KWD</span>
           <span style="min-width:120px;color:var(--text-muted);font-size:12px">${f.note||'—'}</span>
         </div>`).join('')}
@@ -2958,7 +2958,7 @@ function renderGoldDetail() {
     ${goldTrades.map((t, i) => `
       <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
         <span style="min-width:24px;color:var(--text-muted)">${i+1}</span>
-        <span style="min-width:90px">${t.date}</span>
+        <span style="min-width:90px">${formatDate(t.date)}</span>
         <span style="min-width:70px;color:var(--gold);font-weight:700">${(+t.qty).toFixed(3)}</span>
         <span style="min-width:90px">${(+t.price).toFixed(3)} KWD</span>
         <span style="min-width:70px;color:var(--gold)">${t.mfg ? (+t.mfg).toFixed(3) : '—'}</span>
@@ -2994,7 +2994,7 @@ async function saveGoldEdit() {
   const mfg   = +document.getElementById('ge-mfg').value || 0;
   const note  = document.getElementById('ge-note').value;
   const dateVal = document.getElementById('ge-date').value;
-  const displayDate = dateVal ? new Date(dateVal+'T12:00:00').toLocaleDateString('ar-KW') : state.trades[idx].date;
+  const displayDate = dateVal ? new Date(dateVal+'T12:00:00').toLocaleDateString('en-GB') : state.trades[idx].date;
   const total = qty * price;
   const updated = { ...state.trades[idx], qty, price, mfg, note, total, total_orig: total, date: displayDate };
   try {
@@ -3239,6 +3239,25 @@ function renderGoal() {
 
     ${goal && goal.note ? `<div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:10px;font-size:13px;color:var(--text-muted)">📝 ${goal.note}</div>` : ''}
   `;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  // If already in English format (contains only digits, / or -), return as is
+  if (/^[0-9\/\-]+$/.test(d)) return d;
+  // Try to parse Arabic/localized date
+  try {
+    // Convert Arabic-Indic numerals to Western
+    const westernized = d.replace(/[٠-٩]/g, n => '٠١٢٣٤٥٦٧٨٩'.indexOf(n));
+    const parts = westernized.split(/[\/\-]/);
+    if (parts.length === 3) {
+      // Could be DD/MM/YYYY or YYYY-MM-DD
+      const p0 = parseInt(parts[0]), p2 = parseInt(parts[2]);
+      if (p0 > 31) return d; // already YYYY-MM-DD ish
+      return `${parts[2]}-${String(parts[1]).padStart(2,'0')}-${String(parts[0]).padStart(2,'0')}`;
+    }
+  } catch(e) {}
+  return d;
 }
 
 // ============================================================
