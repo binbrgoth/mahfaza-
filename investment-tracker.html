@@ -1322,7 +1322,29 @@
 
 <script>
 // ============================================================
-// DATA STORE - localStorage
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://mqokgolusufvrawvmxiv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xb2tnb2x1c3VmdnJhd3ZteGl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODc4OTksImV4cCI6MjA5Mzc2Mzg5OX0.59HjqTtbfB5DT8auAOVKonA3aL2Vl5I_JfjDcAjJ-gQ';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...options.headers
+    },
+    ...options
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+// ============================================================
+// DATA STORE
 // ============================================================
 let state = {
   assets: {
@@ -1334,25 +1356,31 @@ let state = {
   funding: []
 };
 
-function saveState() {
-  localStorage.setItem('mahfaza_v3', JSON.stringify({
-    trades: state.trades,
-    funding: state.funding
-  }));
+// localStorage backup
+function saveLocal() {
+  try { localStorage.setItem('mahfaza_v3', JSON.stringify({ trades: state.trades, funding: state.funding })); } catch(e) {}
 }
 
 async function loadState() {
+  showLoading(true);
   try {
-    const saved = localStorage.getItem('mahfaza_v3');
-    if (saved) {
-      const data = JSON.parse(saved);
-      state.trades  = data.trades  || [];
-      state.funding = data.funding || [];
-    }
-    rebuildAssets();
+    const [trades, funding] = await Promise.all([
+      sbFetch('trades?order=id.desc'),
+      sbFetch('funding?order=id.desc')
+    ]);
+    state.trades  = trades  || [];
+    state.funding = funding || [];
+    saveLocal();
   } catch(e) {
-    console.error('loadState error:', e);
+    console.error('Supabase load failed, using localStorage:', e);
+    try {
+      const saved = localStorage.getItem('mahfaza_v3');
+      if (saved) { const d = JSON.parse(saved); state.trades = d.trades||[]; state.funding = d.funding||[]; }
+    } catch(e2) {}
+  } finally {
+    showLoading(false);
   }
+  rebuildAssets();
 }
 
 function rebuildAssets() {
@@ -1377,31 +1405,36 @@ function rebuildAssets() {
 }
 
 async function saveTradeToDb(trade) {
+  await sbFetch('trades', { method: 'POST', body: JSON.stringify(trade) });
   state.trades.unshift(trade);
-  saveState();
+  saveLocal();
 }
 
 async function updateTradeInDb(trade) {
+  await sbFetch('trades?id=eq.' + trade.id, { method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(trade) });
   const idx = state.trades.findIndex(t => t.id === trade.id);
   if (idx !== -1) state.trades[idx] = trade;
-  saveState();
+  saveLocal();
   rebuildAssets();
 }
 
 async function deleteTradeFromDb(id) {
+  await sbFetch('trades?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
   state.trades = state.trades.filter(t => t.id !== id);
-  saveState();
+  saveLocal();
   rebuildAssets();
 }
 
 async function saveFundingToDb(f) {
+  await sbFetch('funding', { method: 'POST', body: JSON.stringify(f) });
   state.funding.unshift(f);
-  saveState();
+  saveLocal();
 }
 
 async function deleteFundingFromDb(id) {
+  await sbFetch('funding?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
   state.funding = state.funding.filter(f => f.id !== id);
-  saveState();
+  saveLocal();
 }
 
 function showLoading(on) {
@@ -2125,8 +2158,11 @@ document.getElementById('edit-modal').addEventListener('click', function(e) {
 
 async function clearHistory() {
   if (!confirm('هل أنت متأكد من مسح كامل السجل؟')) return;
+  try {
+    await sbFetch('trades?id=gt.0', { method: 'DELETE', prefer: 'return=minimal' });
+  } catch(e) { console.error(e); }
   state.trades = [];
-  saveState();
+  saveLocal();
   rebuildAssets();
   renderHistory();
   renderDashboard();
@@ -2456,7 +2492,13 @@ function saveFundingEdit() {
   }
 
   state.funding[idx] = { ...state.funding[idx], type, kwd, usd, rate, note, date: displayDate };
-  saveState();
+  try {
+    await sbFetch('funding?id=eq.' + editingFundingId, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: JSON.stringify({ type, kwd, usd, rate, note, date: displayDate })
+    });
+  } catch(e) { console.error('update funding error:', e); }
+  saveLocal();
   closeFundingEdit();
   renderFunding();
   renderDashboard();
