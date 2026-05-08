@@ -983,18 +983,20 @@
   <div id="page-funding" class="page">
 
     <!-- ملخص الرصيد الكلي -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">
-      <div class="stat-card">
-        <div class="stat-value" id="f-total-gold-kwd" style="color:var(--gold)">0.000</div>
-        <div class="stat-label">تمويل الذهب (KWD)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="f-total-stocks-usd" style="color:var(--blue)">0.00</div>
-        <div class="stat-label">تمويل الأسهم (USD)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="f-total-cash-kwd" style="color:var(--green)">0.000</div>
-        <div class="stat-label">الكاش المتاح (KWD)</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:28px;padding-bottom:4px">
+      <div style="display:flex;gap:16px;min-width:max-content">
+        <div class="stat-card" style="min-width:160px;flex-shrink:0">
+          <div class="stat-value" id="f-total-gold-kwd" style="color:var(--gold)">0.000</div>
+          <div class="stat-label">تمويل الذهب (KWD)</div>
+        </div>
+        <div class="stat-card" style="min-width:160px;flex-shrink:0">
+          <div class="stat-value" id="f-total-stocks-usd" style="color:var(--blue)">0.00</div>
+          <div class="stat-label">تمويل الأسهم (USD)</div>
+        </div>
+        <div class="stat-card" style="min-width:160px;flex-shrink:0">
+          <div class="stat-value" id="f-total-cash-kwd" style="color:var(--green)">0.000</div>
+          <div class="stat-label">الكاش المتاح (KWD)</div>
+        </div>
       </div>
     </div>
 
@@ -1209,6 +1211,19 @@
 
   </div>
 
+  <!-- ========== CASH DETAIL ========== -->
+  <div id="page-cash-detail" class="page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="section-title" style="margin:0">💰 تفاصيل الكاش</div>
+      <div style="font-size:13px;color:var(--text-muted)">
+        الإجمالي: <strong id="cd-total" style="color:var(--green)">0.000</strong> KWD
+      </div>
+    </div>
+    <div class="table-card">
+      <div id="cd-body" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+    </div>
+  </div>
+
   <!-- ========== GOLD DETAIL ========== -->
   <div id="page-gold-detail" class="page">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
@@ -1219,7 +1234,7 @@
       </div>
     </div>
     <div class="table-card">
-      <div id="gd-body"></div>
+      <div id="gd-body" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
     </div>
   </div>
 
@@ -1544,7 +1559,8 @@ function goBack() {
     const labels = {
       dashboard:'لوحة التحكم', trade:'شراء / بيع', funding:'التمويل',
       history:'السجل', stats:'الإحصائيات', goal:'الهدف',
-      prices:'أسعار اليوم', 'gold-detail':'تفاصيل الذهب', 'stocks-detail':'تفاصيل الأسهم'
+      prices:'أسعار اليوم', 'gold-detail':'تفاصيل الذهب',
+      'stocks-detail':'تفاصيل الأسهم', 'cash-detail':'تفاصيل الكاش'
     };
     document.getElementById('menu-current').textContent = labels[prev] || prev;
     const backBtn = document.getElementById('back-btn');
@@ -1572,6 +1588,7 @@ function showPage(id) {
   if (id === 'history') renderHistory();
   if (id === 'gold-detail') renderGoldDetail();
   if (id === 'stocks-detail') renderStocksDetail();
+  if (id === 'cash-detail') renderCashDetail();
   if (id === 'stats') renderStats();
   if (id === 'goal') renderGoal();
   if (id === 'prices') renderPrices();
@@ -1910,7 +1927,7 @@ function renderAssetCards() {
   const totalWithCash = getTotalValue();
   const cashPct = totalWithCash ? (cashVal / totalWithCash * 100) : 0;
   cont.innerHTML += `
-    <div class="asset-card" style="border-top:3px solid var(--green)">
+    <div class="asset-card" style="border-top:3px solid var(--green);cursor:pointer" onclick="navTo('cash-detail','تفاصيل الكاش')">
       <div class="asset-header">
         <div class="asset-icon" style="background:rgba(0,214,143,0.15)">💰</div>
         <span class="asset-badge" style="background:rgba(0,214,143,0.15);color:var(--green)">KWD</span>
@@ -2842,6 +2859,38 @@ function renderPrices() {
 }
 
 // ============================================================
+// CASH DETAIL PAGE
+// ============================================================
+function renderCashDetail() {
+  const cashFunding = (state.funding || []).filter(f => f.type === 'cash' && !f.isDeduction);
+  const total = cashFunding.reduce((s, f) => s + (+f.kwd || 0), 0);
+  document.getElementById('cd-total').textContent = total.toFixed(3);
+
+  const body = document.getElementById('cd-body');
+  if (!cashFunding.length) {
+    body.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد إدخالات كاش</p></div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div style="min-width:500px">
+      <div style="background:var(--bg3);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;font-size:11px;font-weight:700;color:var(--text-muted)">
+        <span style="min-width:24px">#</span>
+        <span style="min-width:100px">التاريخ</span>
+        <span style="flex:1">المبلغ (KWD)</span>
+        <span style="min-width:120px">ملاحظة</span>
+      </div>
+      ${cashFunding.map((f, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+          <span style="min-width:24px;color:var(--text-muted)">${i+1}</span>
+          <span style="min-width:100px">${f.date}</span>
+          <span style="flex:1;color:var(--green);font-weight:700">${(+f.kwd).toFixed(3)} KWD</span>
+          <span style="min-width:120px;color:var(--text-muted);font-size:12px">${f.note||'—'}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ============================================================
 // GOLD DETAIL PAGE
 // ============================================================
 let editingGoldId = null;
@@ -2858,6 +2907,7 @@ function renderGoldDetail() {
   }
 
   body.innerHTML = `
+    <div style="min-width:600px">
     <div style="background:var(--bg3);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;font-size:11px;font-weight:700;color:var(--text-muted)">
       <span style="min-width:24px">#</span>
       <span style="min-width:90px">التاريخ</span>
@@ -2878,7 +2928,8 @@ function renderGoldDetail() {
         <span style="flex:1;color:var(--green);font-weight:700">${(+t.total).toFixed(3)} KWD</span>
         <span style="min-width:60px;color:var(--text-muted);font-size:11px">${t.note||'—'}</span>
         <button onclick="openGoldEdit('${t.id}')" style="padding:5px 12px;border-radius:7px;border:1px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--gold);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer">تعديل</button>
-      </div>`).join('')}`;
+      </div>`).join('')}
+    </div>`;
 }
 
 function openGoldEdit(id) {
