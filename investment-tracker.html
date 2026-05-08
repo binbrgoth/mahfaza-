@@ -766,29 +766,29 @@
   </div>
 
   <!-- Dropdown Menu -->
-  <div style="position:relative">
-    <button id="menu-btn" onclick="toggleMenu()" style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 16px;color:var(--text);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s">
-      <span id="menu-current">لوحة التحكم</span>
-      <span style="font-size:10px;color:var(--text-muted)" id="menu-arrow">▼</span>
-    </button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button id="back-btn" onclick="goBack()" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text-muted);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">←</button>
+    <div style="position:relative">
+      <button id="menu-btn" onclick="toggleMenu()" style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 16px;color:var(--text);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s">
+        <span id="menu-current">لوحة التحكم</span>
+        <span style="font-size:10px;color:var(--text-muted)" id="menu-arrow">▼</span>
+      </button>
 
-    <div id="menu-dropdown" style="display:none;position:absolute;left:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:180px;z-index:200;box-shadow:0 16px 40px rgba(0,0,0,0.4)">
-      <button class="menu-item active" onclick="navTo('dashboard','لوحة التحكم')">📊 لوحة التحكم</button>
-      <button class="menu-item" onclick="navTo('trade','شراء / بيع')">💱 شراء / بيع</button>
-      <button class="menu-item" onclick="navTo('funding','التمويل')">💸 التمويل</button>
-      <button class="menu-item" onclick="navTo('history','السجل')">📋 السجل</button>
-      <button class="menu-item" onclick="navTo('gold-detail','تفاصيل الذهب')">🥇 تفاصيل الذهب</button>
-      <button class="menu-item" onclick="navTo('stocks-detail','تفاصيل الأسهم')">📈 تفاصيل الأسهم</button>
-      <button class="menu-item" onclick="navTo('stats','الإحصائيات')">📊 الإحصائيات</button>
-      <button class="menu-item" onclick="navTo('goal','الهدف')">🏠 الهدف</button>
-      <button class="menu-item" onclick="navTo('prices','أسعار اليوم')">💹 أسعار اليوم</button>
+      <div id="menu-dropdown" style="display:none;position:absolute;left:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:180px;z-index:200;box-shadow:0 16px 40px rgba(0,0,0,0.4)">
+        <button class="menu-item active" onclick="navTo('dashboard','لوحة التحكم')">📊 لوحة التحكم</button>
+        <button class="menu-item" onclick="navTo('trade','شراء / بيع')">💱 شراء / بيع</button>
+        <button class="menu-item" onclick="navTo('funding','التمويل')">💸 التمويل</button>
+        <button class="menu-item" onclick="navTo('history','السجل')">📋 السجل</button>
+        <button class="menu-item" onclick="navTo('gold-detail','تفاصيل الذهب')">🥇 تفاصيل الذهب</button>
+        <button class="menu-item" onclick="navTo('stocks-detail','تفاصيل الأسهم')">📈 تفاصيل الأسهم</button>
+        <button class="menu-item" onclick="navTo('stats','الإحصائيات')">📊 الإحصائيات</button>
+        <button class="menu-item" onclick="navTo('goal','الهدف')">🏠 الهدف</button>
+        <button class="menu-item" onclick="navTo('prices','أسعار اليوم')">💹 أسعار اليوم</button>
+      </div>
     </div>
   </div>
 </nav>
 <div id="loading-bar" style="display:none;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light));position:fixed;top:0;left:0;right:0;z-index:9999;animation:pulse 1s ease-in-out infinite"></div>
-
-<!-- زر الرجوع ثابت أسفل يسار -->
-<button id="back-btn" onclick="goBack()" style="display:none;position:fixed;bottom:28px;left:24px;z-index:500;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 20px;color:var(--text-muted);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">← رجوع</button>
 
 <main>
 
