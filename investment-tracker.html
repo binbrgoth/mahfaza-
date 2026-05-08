@@ -3039,7 +3039,7 @@ function renderStocksDetail() {
     return;
   }
 
-  body.innerHTML = tickers.map(ticker => {
+  const rows = tickers.map(ticker => {
     const buys  = state.trades.filter(t => t.ticker===ticker && t.type==='buy');
     const sells = state.trades.filter(t => t.ticker===ticker && t.type==='sell');
     const qty   = buys.reduce((s,t)=>s+(+t.qty),0) - sells.reduce((s,t)=>s+(+t.qty),0);
@@ -3049,66 +3049,57 @@ function renderStocksDetail() {
     const avgKWD = avgUSD * avgRate;
     const currentUSD = prices.stocks[ticker] || 0;
     const currentKWD = currentUSD * avgRate;
-    const currentValUSD = qty * currentUSD;
     const currentValKWD = qty * currentKWD;
     const costValKWD    = qty * avgKWD;
     const pnlKWD        = currentValKWD - costValKWD;
-    const pnlUSD        = currentValUSD - (qty * avgUSD);
     const pnlPct        = costValKWD ? (pnlKWD/costValKWD*100) : 0;
     const hasCurrent    = currentUSD > 0;
+    const pnlColor      = pnlKWD >= 0 ? 'var(--green)' : 'var(--red)';
 
     return `
-      <div class="chart-card" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <span style="font-size:24px;font-weight:900;color:var(--blue)">${ticker}</span>
-          ${hasCurrent
-            ? `<div style="text-align:left"><div style="font-size:11px;color:var(--text-muted)">آخر سعر</div><div style="font-size:16px;font-weight:700">${currentUSD.toFixed(2)} USD</div></div>`
-            : `<span style="font-size:11px;color:var(--text-muted)">أدخل السعر في أسعار اليوم</span>`}
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:16px;font-weight:900;color:var(--blue)">${ticker}</div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">الكمية</div>
+          <div style="font-weight:700;font-size:13px">${qty.toFixed(4)}</div>
         </div>
-
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الكمية</div>
-            <div style="font-weight:700">${qty.toFixed(4)}</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء USD</div>
-            <div style="font-weight:700">${avgUSD.toFixed(3)}</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء KWD</div>
-            <div style="font-weight:700;color:var(--gold)">${avgKWD.toFixed(3)}</div>
-          </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">متوسط الشراء USD</div>
+          <div style="font-weight:700;font-size:13px">${avgUSD.toFixed(2)}</div>
         </div>
-
-        ${hasCurrent ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية USD</div>
-            <div style="font-weight:700;color:var(--blue)">${currentValUSD.toFixed(2)}</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية KWD</div>
-            <div style="font-weight:700;color:var(--blue)">${currentValKWD.toFixed(3)}</div>
-          </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">متوسط الشراء KWD</div>
+          <div style="font-weight:700;font-size:13px;color:var(--gold)">${avgKWD.toFixed(3)}</div>
         </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="padding:12px;background:${pnlKWD>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الربح / الخسارة USD</div>
-            <div style="font-weight:800;font-size:16px;color:${pnlUSD>=0?'var(--green)':'var(--red)'}">
-              ${pnlUSD>=0?'+':''}${pnlUSD.toFixed(2)}
-            </div>
-          </div>
-          <div style="padding:12px;background:${pnlKWD>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الربح / الخسارة KWD <span style="color:${pnlPct>=0?'var(--green)':'var(--red)'}">(${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</span></div>
-            <div style="font-weight:800;font-size:16px;color:${pnlKWD>=0?'var(--green)':'var(--red)'}">
-              ${pnlKWD>=0?'+':''}${pnlKWD.toFixed(3)}
-            </div>
-          </div>
-        </div>` : ''}
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">آخر سعر USD</div>
+          <div style="font-weight:700;font-size:13px;color:var(--blue)">${hasCurrent ? currentUSD.toFixed(2) : '—'}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">القيمة KWD</div>
+          <div style="font-weight:700;font-size:13px;color:var(--blue)">${hasCurrent ? currentValKWD.toFixed(3) : '—'}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">الربح / الخسارة</div>
+          <div style="font-weight:800;font-size:13px;color:${pnlColor}">${hasCurrent ? (pnlKWD>=0?'+':'') + pnlKWD.toFixed(3) + ' (' + (pnlPct>=0?'+':'') + pnlPct.toFixed(1) + '%)' : '—'}</div>
+        </div>
       </div>`;
   }).join('');
+
+  body.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+      <!-- Header -->
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;gap:12px;padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);min-width:700px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted)">السهم</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">الكمية</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">متوسط الشراء USD</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">متوسط الشراء KWD</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">آخر سعر USD</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">القيمة KWD</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">الربح / الخسارة</div>
+      </div>
+      <div style="min-width:700px">${rows}</div>
+    </div>`;
 }
 // ============================================================
 // GOAL - بيت العمر
