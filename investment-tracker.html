@@ -3243,19 +3243,12 @@ function renderGoal() {
 
 function formatDate(d) {
   if (!d) return '—';
-  // If already in English format (contains only digits, / or -), return as is
-  if (/^[0-9\/\-]+$/.test(d)) return d;
-  // Try to parse Arabic/localized date
-  try {
-    // Convert Arabic-Indic numerals to Western
-    const westernized = d.replace(/[٠-٩]/g, n => '٠١٢٣٤٥٦٧٨٩'.indexOf(n));
-    const parts = westernized.split(/[\/\-]/);
-    if (parts.length === 3) {
-      // Could be DD/MM/YYYY or YYYY-MM-DD
-      const p0 = parseInt(parts[0]), p2 = parseInt(parts[2]);
-      if (p0 > 31) return d; // already YYYY-MM-DD ish
-      return `${parts[2]}-${String(parts[1]).padStart(2,'0')}-${String(parts[0]).padStart(2,'0')}`;
-    }
+  d = String(d).replace(/[٠-٩]/g, n => '٠١٢٣٤٥٦٧٨٩'.indexOf(n));
+  if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return d;
+  const m = d.match(/^([0-9]{1,2})[\/-]([0-9]{1,2})[\/-]([0-9]{4})$/);
+  if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+  return d;
+}
   } catch(e) {}
   return d;
 }
