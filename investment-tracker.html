@@ -760,12 +760,9 @@
 
 <!-- NAV -->
 <nav>
-  <div style="display:flex;align-items:center;gap:10px">
-    <button id="back-btn" onclick="goBack()" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text-muted);font-family:'Cairo',sans-serif;font-size:14px;cursor:pointer;transition:all 0.2s">← رجوع</button>
-    <div class="logo">
-      <div class="logo-icon">💰</div>
-      محفظتي
-    </div>
+  <div class="logo">
+    <div class="logo-icon">💰</div>
+    محفظتي
   </div>
 
   <!-- Dropdown Menu -->
@@ -789,6 +786,9 @@
   </div>
 </nav>
 <div id="loading-bar" style="display:none;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light));position:fixed;top:0;left:0;right:0;z-index:9999;animation:pulse 1s ease-in-out infinite"></div>
+
+<!-- زر الرجوع ثابت أسفل يسار -->
+<button id="back-btn" onclick="goBack()" style="display:none;position:fixed;bottom:28px;left:24px;z-index:500;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 20px;color:var(--text-muted);font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">← رجوع</button>
 
 <main>
 
@@ -1153,6 +1153,21 @@
   <div id="page-prices" class="page">
 
     <div class="section-title" style="margin-bottom:20px">💹 أسعار اليوم</div>
+
+    <!-- سعر الصرف -->
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-title">💱 سعر الدولار اليوم</div>
+      <div style="display:flex;gap:16px;align-items:flex-end">
+        <div class="form-group" style="flex:1;margin:0">
+          <label>1 USD = ؟ KWD</label>
+          <input class="form-control" id="p-usd-rate" type="number" placeholder="0.0000" step="0.0001" oninput="savePrices();renderPrices()">
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:10px;padding:14px;text-align:center;font-size:13px">
+          <div style="color:var(--text-muted);margin-bottom:4px">1 KWD = ؟ USD</div>
+          <strong id="p-kwd-rate" style="color:var(--gold);font-size:18px">—</strong>
+        </div>
+      </div>
+    </div>
 
     <!-- فورم الأسعار -->
     <div class="grid-2" style="margin-bottom:24px">
@@ -2618,22 +2633,33 @@ document.addEventListener('DOMContentLoaded', function() {
 // PRICES - أسعار اليوم
 // ============================================================
 function savePrices() {
-  const prices = { gold: +document.getElementById('p-gold-price').value || 0, stocks: {} };
+  const prices = {
+    gold: +document.getElementById('p-gold-price').value || 0,
+    usdRate: +document.getElementById('p-usd-rate').value || 0,
+    stocks: {}
+  };
   document.querySelectorAll('.p-stock-input').forEach(inp => {
     if (inp.value) prices.stocks[inp.dataset.ticker] = +inp.value;
   });
   localStorage.setItem('mahfaza_prices', JSON.stringify(prices));
+  // Update KWD rate display
+  const rateEl = document.getElementById('p-kwd-rate');
+  if (rateEl && prices.usdRate > 0) {
+    rateEl.textContent = (1 / prices.usdRate).toFixed(4);
+  } else if (rateEl) { rateEl.textContent = '—'; }
 }
 
 async function savePricesToDb() {
-  const prices = { gold: +document.getElementById('p-gold-price').value || 0, stocks: {} };
+  const prices = {
+    gold: +document.getElementById('p-gold-price').value || 0,
+    usdRate: +document.getElementById('p-usd-rate').value || 0,
+    stocks: {}
+  };
   document.querySelectorAll('.p-stock-input').forEach(inp => {
     if (inp.value) prices.stocks[inp.dataset.ticker] = +inp.value;
   });
   localStorage.setItem('mahfaza_prices', JSON.stringify(prices));
-
   try {
-    // Delete existing prices record then insert new
     await sbFetch('prices?id=eq.1', { method: 'DELETE', prefer: 'return=minimal' });
     await sbFetch('prices', { method: 'POST', body: JSON.stringify({ id: 1, data: JSON.stringify(prices) }) });
     showToast('✅ تم حفظ الأسعار');
@@ -2673,8 +2699,19 @@ function renderPrices() {
   // Fill gold input
   if (prices.gold) document.getElementById('p-gold-price').value = prices.gold;
 
+  // Fill USD rate
+  const usdRateEl = document.getElementById('p-usd-rate');
+  const kwdRateEl = document.getElementById('p-kwd-rate');
+  if (prices.usdRate && usdRateEl) {
+    usdRateEl.value = prices.usdRate;
+    if (kwdRateEl) kwdRateEl.textContent = (1/prices.usdRate).toFixed(4);
+  }
+
+  // Use user-entered rate or fallback to avg rate from funding
+  const effectiveRate = prices.usdRate || avgRate;
+
   // Build stock inputs from trades
-  const tickers = [...new Set(state.trades.filter(t=>t.asset==='stocks'&&t.ticker).map(t=>t.ticker))];
+  const tickers = [...new Set(state.trades.filter(t=>(t.asset==='stocks_us'||t.asset==='stocks')&&t.ticker).map(t=>t.ticker))];
   const stocksInputs = document.getElementById('p-stocks-inputs');
   stocksInputs.innerHTML = tickers.length
     ? tickers.map(ticker => `
@@ -2683,6 +2720,7 @@ function renderPrices() {
           <input class="form-control p-stock-input" data-ticker="${ticker}" type="number"
             placeholder="0.00" step="0.01" value="${prices.stocks[ticker]||''}"
             oninput="savePrices()" style="flex:1">
+          ${prices.stocks[ticker] && effectiveRate ? `<span style="font-size:12px;color:var(--gold);min-width:70px;text-align:left">${(prices.stocks[ticker]*effectiveRate).toFixed(3)} KWD</span>` : ''}
         </div>`)
       .join('')
     : '<div style="color:var(--text-muted);font-size:13px">لا توجد أسهم مسجّلة بعد</div>';
@@ -2727,14 +2765,16 @@ function renderPrices() {
   const stockRows = tickers.map(ticker => {
     const currentUSD = prices.stocks[ticker] || 0;
     if (!currentUSD) return null;
-    const buys  = state.trades.filter(t=>t.asset==='stocks'&&t.ticker===ticker&&t.type==='buy');
-    const sells = state.trades.filter(t=>t.asset==='stocks'&&t.ticker===ticker&&t.type==='sell');
-    const qty   = buys.reduce((s,t)=>s+t.qty,0) - sells.reduce((s,t)=>s+t.qty,0);
+    const buys  = state.trades.filter(t=>(t.asset==='stocks_us'||t.asset==='stocks')&&t.ticker===ticker&&t.type==='buy');
+    const sells = state.trades.filter(t=>(t.asset==='stocks_us'||t.asset==='stocks')&&t.ticker===ticker&&t.type==='sell');
+    const qty   = buys.reduce((s,t)=>s+(+t.qty),0) - sells.reduce((s,t)=>s+(+t.qty),0);
     if (qty <= 0) return null;
-    const avgUSD    = buys.reduce((s,t)=>s+t.total,0) / buys.reduce((s,t)=>s+t.qty,0);
-    const currentKWD = currentUSD * avgRate;
-    const costKWD    = avgUSD * avgRate;
-    const pnlKWD     = (currentUSD - avgUSD) * qty * avgRate;
+    const totalCostUSD = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+    const totalQty = buys.reduce((s,t)=>s+(+t.qty),0);
+    const avgUSD    = totalQty > 0 ? totalCostUSD / totalQty : 0;
+    const currentKWD = currentUSD * effectiveRate;
+    const costKWD    = avgUSD * effectiveRate;
+    const pnlKWD     = (currentUSD - avgUSD) * qty * effectiveRate;
     const pnlPct     = avgUSD ? ((currentUSD - avgUSD) / avgUSD * 100) : 0;
     return { ticker, qty, currentUSD, currentKWD, costKWD, pnlKWD, pnlPct };
   }).filter(Boolean);
