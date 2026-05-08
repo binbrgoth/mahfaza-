@@ -760,9 +760,12 @@
 
 <!-- NAV -->
 <nav>
-  <div class="logo">
-    <div class="logo-icon">💰</div>
-    محفظتي
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="back-btn" onclick="goBack()" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text-muted);font-family:'Cairo',sans-serif;font-size:14px;cursor:pointer;transition:all 0.2s">← رجوع</button>
+    <div class="logo">
+      <div class="logo-icon">💰</div>
+      محفظتي
+    </div>
   </div>
 
   <!-- Dropdown Menu -->
@@ -1498,6 +1501,8 @@ function showLoading(on) {
 // ============================================================
 // NAVIGATION
 // ============================================================
+let navHistory = ['dashboard'];
+
 function toggleMenu() {
   const d = document.getElementById('menu-dropdown');
   const arrow = document.getElementById('menu-arrow');
@@ -1507,12 +1512,30 @@ function toggleMenu() {
 }
 
 function navTo(id, label) {
+  navHistory.push(id);
   document.getElementById('menu-current').textContent = label;
   document.getElementById('menu-dropdown').style.display = 'none';
   document.getElementById('menu-arrow').textContent = '▼';
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) backBtn.style.display = id === 'dashboard' ? 'none' : 'block';
   showPage(id);
+}
+
+function goBack() {
+  if (navHistory.length > 1) {
+    navHistory.pop();
+    const prev = navHistory[navHistory.length - 1];
+    const labels = {
+      dashboard:'لوحة التحكم', trade:'شراء / بيع', funding:'التمويل',
+      history:'السجل', stats:'الإحصائيات', goal:'الهدف',
+      prices:'أسعار اليوم', 'gold-detail':'تفاصيل الذهب', 'stocks-detail':'تفاصيل الأسهم'
+    };
+    document.getElementById('menu-current').textContent = labels[prev] || prev;
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.style.display = prev === 'dashboard' ? 'none' : 'block';
+    showPage(prev);
+  }
 }
 
 // Close menu on outside click
@@ -2892,68 +2915,70 @@ function renderStocksDetail() {
     const buys  = state.trades.filter(t => t.ticker===ticker && t.type==='buy');
     const sells = state.trades.filter(t => t.ticker===ticker && t.type==='sell');
     const qty   = buys.reduce((s,t)=>s+(+t.qty),0) - sells.reduce((s,t)=>s+(+t.qty),0);
-    const totalCostUSD = buys.reduce((s,t)=>s+((+t.total_orig)||(+t.totalOrig)||0),0);
+    const totalCostUSD = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
     const totalQtyBought = buys.reduce((s,t)=>s+(+t.qty),0);
     const avgUSD = totalQtyBought > 0 ? totalCostUSD / totalQtyBought : 0;
     const avgKWD = avgUSD * avgRate;
     const currentUSD = prices.stocks[ticker] || 0;
     const currentKWD = currentUSD * avgRate;
-    const currentVal = qty * currentKWD;
-    const costVal    = qty * avgKWD;
-    const pnl        = currentVal - costVal;
-    const pnlPct     = costVal ? (pnl/costVal*100) : 0;
-    const hasCurrent = currentUSD > 0;
+    const currentValUSD = qty * currentUSD;
+    const currentValKWD = qty * currentKWD;
+    const costValKWD    = qty * avgKWD;
+    const pnlKWD        = currentValKWD - costValKWD;
+    const pnlUSD        = currentValUSD - (qty * avgUSD);
+    const pnlPct        = costValKWD ? (pnlKWD/costValKWD*100) : 0;
+    const hasCurrent    = currentUSD > 0;
 
     return `
       <div class="chart-card" style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <span style="font-size:22px;font-weight:900;color:var(--blue)">${ticker}</span>
-          ${hasCurrent ? `
-            <div style="text-align:left">
-              <div style="font-size:12px;color:var(--text-muted)">آخر سعر</div>
-              <div style="font-size:16px;font-weight:700">${currentUSD.toFixed(2)} USD</div>
-            </div>` : '<span style="font-size:11px;color:var(--text-muted)">أدخل السعر في أسعار اليوم</span>'}
+          <span style="font-size:24px;font-weight:900;color:var(--blue)">${ticker}</span>
+          ${hasCurrent
+            ? `<div style="text-align:left"><div style="font-size:11px;color:var(--text-muted)">آخر سعر</div><div style="font-size:16px;font-weight:700">${currentUSD.toFixed(2)} USD</div></div>`
+            : `<span style="font-size:11px;color:var(--text-muted)">أدخل السعر في أسعار اليوم</span>`}
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:${hasCurrent?'16px':'0'}">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
           <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الكمية</div>
-            <div style="font-weight:700;color:var(--text)">${qty.toFixed(4)}</div>
+            <div style="font-weight:700">${qty.toFixed(4)}</div>
           </div>
           <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء USD</div>
-            <div style="font-weight:700;color:var(--text)">${avgUSD.toFixed(3)}</div>
+            <div style="font-weight:700">${avgUSD.toFixed(3)}</div>
           </div>
           <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء KWD</div>
             <div style="font-weight:700;color:var(--gold)">${avgKWD.toFixed(3)}</div>
           </div>
-          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية</div>
-            <div style="font-weight:700;color:var(--blue)">${hasCurrent ? currentVal.toFixed(3)+' KWD' : '—'}</div>
-          </div>
         </div>
 
         ${hasCurrent ? `
-        <div style="padding:12px 16px;background:${pnl>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:13px;color:var(--text-muted)">الربح / الخسارة</span>
-          <span style="font-weight:800;font-size:18px;color:${pnl>=0?'var(--green)':'var(--red)'}">
-            ${pnl>=0?'+':''}${pnl.toFixed(3)} KWD
-            <span style="font-size:13px">(${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</span>
-          </span>
-        </div>` : ''}
-
-        <!-- عمليات الشراء -->
-        <div style="margin-top:16px">
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">عمليات الشراء</div>
-          ${buys.map((t,i) => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
-              <span style="color:var(--text-muted)">${t.date}</span>
-              <span>${(+t.qty).toFixed(4)} سهم</span>
-              <span style="color:var(--text)">${(+t.price).toFixed(2)} USD</span>
-              <span style="color:var(--green)">${(+t.total_orig||(+t.totalOrig)||0).toFixed(2)} USD</span>
-            </div>`).join('')}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية USD</div>
+            <div style="font-weight:700;color:var(--blue)">${currentValUSD.toFixed(2)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية KWD</div>
+            <div style="font-weight:700;color:var(--blue)">${currentValKWD.toFixed(3)}</div>
+          </div>
         </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="padding:12px;background:${pnlKWD>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الربح / الخسارة USD</div>
+            <div style="font-weight:800;font-size:16px;color:${pnlUSD>=0?'var(--green)':'var(--red)'}">
+              ${pnlUSD>=0?'+':''}${pnlUSD.toFixed(2)}
+            </div>
+          </div>
+          <div style="padding:12px;background:${pnlKWD>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الربح / الخسارة KWD <span style="color:${pnlPct>=0?'var(--green)':'var(--red)'}">(${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</span></div>
+            <div style="font-weight:800;font-size:16px;color:${pnlKWD>=0?'var(--green)':'var(--red)'}">
+              ${pnlKWD>=0?'+':''}${pnlKWD.toFixed(3)}
+            </div>
+          </div>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
