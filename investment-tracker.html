@@ -777,7 +777,9 @@
       <button class="menu-item" onclick="navTo('trade','شراء / بيع')">💱 شراء / بيع</button>
       <button class="menu-item" onclick="navTo('funding','التمويل')">💸 التمويل</button>
       <button class="menu-item" onclick="navTo('history','السجل')">📋 السجل</button>
-      <button class="menu-item" onclick="navTo('stats','الإحصائيات')">📈 الإحصائيات</button>
+      <button class="menu-item" onclick="navTo('gold-detail','تفاصيل الذهب')">🥇 تفاصيل الذهب</button>
+      <button class="menu-item" onclick="navTo('stocks-detail','تفاصيل الأسهم')">📈 تفاصيل الأسهم</button>
+      <button class="menu-item" onclick="navTo('stats','الإحصائيات')">📊 الإحصائيات</button>
       <button class="menu-item" onclick="navTo('goal','الهدف')">🏠 الهدف</button>
       <button class="menu-item" onclick="navTo('prices','أسعار اليوم')">💹 أسعار اليوم</button>
     </div>
@@ -1189,34 +1191,62 @@
 
   </div>
 
+  <!-- ========== GOLD DETAIL ========== -->
+  <div id="page-gold-detail" class="page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="section-title" style="margin:0">🥇 تفاصيل الذهب</div>
+      <div style="font-size:13px;color:var(--text-muted)">
+        إجمالي: <strong id="gd-total-qty" style="color:var(--gold)">0</strong> غ &nbsp;|&nbsp;
+        م. الشراء: <strong id="gd-avg-price" style="color:var(--gold)">0</strong> KWD/غ
+      </div>
+    </div>
+    <div class="table-card">
+      <div id="gd-body"></div>
+    </div>
+  </div>
+
+  <!-- ========== STOCKS DETAIL ========== -->
+  <div id="page-stocks-detail" class="page">
+    <div class="section-title" style="margin-bottom:20px">📈 تفاصيل الأسهم</div>
+    <div id="sd-body"></div>
+  </div>
+
 </main>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- GOLD DETAIL MODAL -->
-<div class="modal-overlay" id="gold-modal">
-  <div class="modal" style="max-width:700px;width:95vw">
-    <div class="modal-title">🥇 عمليات الذهب</div>
-    <div id="gold-modal-body" style="overflow-x:auto"></div>
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:13px;color:var(--text-muted)">
-        إجمالي الكمية: <strong id="gold-modal-qty" style="color:var(--gold)"></strong> غرام &nbsp;|&nbsp;
-        متوسط الشراء: <strong id="gold-modal-avg" style="color:var(--gold)"></strong> KWD/غ
+<!-- GOLD TRADE EDIT MODAL -->
+<div class="modal-overlay" id="gold-edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ تعديل صفقة ذهب</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>التاريخ</label>
+      <input class="form-control" id="ge-date" type="date">
+    </div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="form-group">
+        <label>الكمية (غرام)</label>
+        <input class="form-control" id="ge-qty" type="number" step="0.001">
       </div>
-      <button class="btn btn-outline" onclick="document.getElementById('gold-modal').classList.remove('open')">إغلاق</button>
+      <div class="form-group">
+        <label>سعر الغرام (KWD)</label>
+        <input class="form-control" id="ge-price" type="number" step="0.001">
+      </div>
     </div>
-  </div>
-</div>
-
-<!-- STOCKS DETAIL MODAL -->
-<div class="modal-overlay" id="stocks-modal">
-  <div class="modal" style="max-width:750px;width:95vw">
-    <div class="modal-title">📈 تفاصيل الأسهم</div>
-    <div id="stocks-modal-body"></div>
-    <div style="margin-top:16px;text-align:left">
-      <button class="btn btn-outline" onclick="document.getElementById('stocks-modal').classList.remove('open')">إغلاق</button>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>المصنعية (KWD)</label>
+      <input class="form-control" id="ge-mfg" type="number" step="0.001">
     </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>ملاحظة</label>
+      <input class="form-control" id="ge-note" type="text">
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <button class="btn btn-gold" style="flex:1" onclick="saveGoldEdit()">💾 حفظ</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeGoldEdit()">إلغاء</button>
+    </div>
+    <button class="btn btn-red" style="width:100%" onclick="deleteGoldTrade()">🗑️ حذف الصفقة</button>
   </div>
 </div>
 
@@ -1502,6 +1532,8 @@ function showPage(id) {
   if (id === 'trade') renderHoldingsMini();
   if (id === 'funding') { renderFunding(); setTodayDateFunding(); }
   if (id === 'history') renderHistory();
+  if (id === 'gold-detail') renderGoldDetail();
+  if (id === 'stocks-detail') renderStocksDetail();
   if (id === 'stats') renderStats();
   if (id === 'goal') renderGoal();
   if (id === 'prices') renderPrices();
@@ -1815,7 +1847,7 @@ function renderAssetCards() {
     const bars = generateSparkBars(key);
     const totalWithCash = getTotalValue();
     const pct = totalWithCash ? (value / totalWithCash * 100) : 0;
-    const clickHandler = key === 'gold' ? 'onclick="openGoldModal()"' : 'onclick="openStocksModal()"';
+    const clickHandler = key === 'gold' ? 'onclick="navTo(\'gold-detail\',\'تفاصيل الذهب\')"' : 'onclick="navTo(\'stocks-detail\',\'تفاصيل الأسهم\')"';
     cont.innerHTML += `
       <div class="asset-card ${cls}" ${clickHandler} style="cursor:pointer">
         <div class="asset-header">
@@ -2747,9 +2779,184 @@ function renderPrices() {
 }
 
 // ============================================================
-// ASSET DETAIL MODALS
+// GOLD DETAIL PAGE
 // ============================================================
-function openGoldModal() {
+let editingGoldId = null;
+
+function renderGoldDetail() {
+  const goldTrades = state.trades.filter(t => t.asset === 'gold' && t.type === 'buy').reverse();
+  document.getElementById('gd-total-qty').textContent = state.assets.gold.qty.toFixed(3);
+  document.getElementById('gd-avg-price').textContent = state.assets.gold.avgPrice.toFixed(3);
+
+  const body = document.getElementById('gd-body');
+  if (!goldTrades.length) {
+    body.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد عمليات ذهب</p></div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div style="background:var(--bg3);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;font-size:11px;font-weight:700;color:var(--text-muted)">
+      <span style="min-width:24px">#</span>
+      <span style="min-width:90px">التاريخ</span>
+      <span style="min-width:70px">الكمية (غ)</span>
+      <span style="min-width:90px">سعر الغرام</span>
+      <span style="min-width:70px">المصنعية</span>
+      <span style="flex:1">الإجمالي KWD</span>
+      <span style="min-width:60px">ملاحظة</span>
+      <span style="min-width:60px"></span>
+    </div>
+    ${goldTrades.map((t, i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+        <span style="min-width:24px;color:var(--text-muted)">${i+1}</span>
+        <span style="min-width:90px">${t.date}</span>
+        <span style="min-width:70px;color:var(--gold);font-weight:700">${(+t.qty).toFixed(3)}</span>
+        <span style="min-width:90px">${(+t.price).toFixed(3)} KWD</span>
+        <span style="min-width:70px;color:var(--gold)">${t.mfg ? (+t.mfg).toFixed(3) : '—'}</span>
+        <span style="flex:1;color:var(--green);font-weight:700">${(+t.total).toFixed(3)} KWD</span>
+        <span style="min-width:60px;color:var(--text-muted);font-size:11px">${t.note||'—'}</span>
+        <button onclick="openGoldEdit('${t.id}')" style="padding:5px 12px;border-radius:7px;border:1px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--gold);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer">تعديل</button>
+      </div>`).join('')}`;
+}
+
+function openGoldEdit(id) {
+  const t = state.trades.find(t => String(t.id) === String(id));
+  if (!t) return;
+  editingGoldId = t.id;
+  document.getElementById('ge-qty').value = t.qty;
+  document.getElementById('ge-price').value = t.price;
+  document.getElementById('ge-mfg').value = t.mfg || '';
+  document.getElementById('ge-note').value = t.note || '';
+  document.getElementById('ge-date').value = '';
+  document.getElementById('gold-edit-modal').classList.add('open');
+}
+
+function closeGoldEdit() {
+  document.getElementById('gold-edit-modal').classList.remove('open');
+  editingGoldId = null;
+}
+
+async function saveGoldEdit() {
+  const idx = state.trades.findIndex(t => String(t.id) === String(editingGoldId));
+  if (idx === -1) return;
+  const qty   = +document.getElementById('ge-qty').value;
+  const price = +document.getElementById('ge-price').value;
+  const mfg   = +document.getElementById('ge-mfg').value || 0;
+  const note  = document.getElementById('ge-note').value;
+  const dateVal = document.getElementById('ge-date').value;
+  const displayDate = dateVal ? new Date(dateVal+'T12:00:00').toLocaleDateString('ar-KW') : state.trades[idx].date;
+  const total = qty * price;
+  const updated = { ...state.trades[idx], qty, price, mfg, note, total, total_orig: total, date: displayDate };
+  try {
+    showLoading(true);
+    await updateTradeInDb(updated);
+    closeGoldEdit();
+    renderGoldDetail();
+    renderDashboard();
+    showToast('✅ تم حفظ التعديل');
+  } catch(e) { showToast('❌ خطأ'); } finally { showLoading(false); }
+}
+
+async function deleteGoldTrade() {
+  if (!editingGoldId) return;
+  if (!confirm('حذف هذه الصفقة؟')) return;
+  try {
+    showLoading(true);
+    await deleteTradeFromDb(editingGoldId);
+    closeGoldEdit();
+    renderGoldDetail();
+    renderDashboard();
+    showToast('🗑️ تم الحذف');
+  } catch(e) { showToast('❌ خطأ'); } finally { showLoading(false); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const m = document.getElementById('gold-edit-modal');
+  if (m) m.addEventListener('click', e => { if (e.target===m) closeGoldEdit(); });
+});
+
+// ============================================================
+// STOCKS DETAIL PAGE
+// ============================================================
+function renderStocksDetail() {
+  const prices = loadPrices();
+  const avgRate = getAvgRate() || 0.307;
+  const tickers = [...new Set(state.trades.filter(t => (t.asset==='stocks_us'||t.asset==='stocks') && t.ticker).map(t=>t.ticker))];
+  const body = document.getElementById('sd-body');
+
+  if (!tickers.length) {
+    body.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد أسهم</p></div>';
+    return;
+  }
+
+  body.innerHTML = tickers.map(ticker => {
+    const buys  = state.trades.filter(t => t.ticker===ticker && t.type==='buy');
+    const sells = state.trades.filter(t => t.ticker===ticker && t.type==='sell');
+    const qty   = buys.reduce((s,t)=>s+(+t.qty),0) - sells.reduce((s,t)=>s+(+t.qty),0);
+    const totalCostUSD = buys.reduce((s,t)=>s+((+t.total_orig)||(+t.totalOrig)||0),0);
+    const totalQtyBought = buys.reduce((s,t)=>s+(+t.qty),0);
+    const avgUSD = totalQtyBought > 0 ? totalCostUSD / totalQtyBought : 0;
+    const avgKWD = avgUSD * avgRate;
+    const currentUSD = prices.stocks[ticker] || 0;
+    const currentKWD = currentUSD * avgRate;
+    const currentVal = qty * currentKWD;
+    const costVal    = qty * avgKWD;
+    const pnl        = currentVal - costVal;
+    const pnlPct     = costVal ? (pnl/costVal*100) : 0;
+    const hasCurrent = currentUSD > 0;
+
+    return `
+      <div class="chart-card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <span style="font-size:22px;font-weight:900;color:var(--blue)">${ticker}</span>
+          ${hasCurrent ? `
+            <div style="text-align:left">
+              <div style="font-size:12px;color:var(--text-muted)">آخر سعر</div>
+              <div style="font-size:16px;font-weight:700">${currentUSD.toFixed(2)} USD</div>
+            </div>` : '<span style="font-size:11px;color:var(--text-muted)">أدخل السعر في أسعار اليوم</span>'}
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:${hasCurrent?'16px':'0'}">
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">الكمية</div>
+            <div style="font-weight:700;color:var(--text)">${qty.toFixed(4)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء USD</div>
+            <div style="font-weight:700;color:var(--text)">${avgUSD.toFixed(3)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">م. شراء KWD</div>
+            <div style="font-weight:700;color:var(--gold)">${avgKWD.toFixed(3)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">القيمة الحالية</div>
+            <div style="font-weight:700;color:var(--blue)">${hasCurrent ? currentVal.toFixed(3)+' KWD' : '—'}</div>
+          </div>
+        </div>
+
+        ${hasCurrent ? `
+        <div style="padding:12px 16px;background:${pnl>=0?'rgba(0,214,143,0.08)':'rgba(255,77,103,0.08)'};border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--text-muted)">الربح / الخسارة</span>
+          <span style="font-weight:800;font-size:18px;color:${pnl>=0?'var(--green)':'var(--red)'}">
+            ${pnl>=0?'+':''}${pnl.toFixed(3)} KWD
+            <span style="font-size:13px">(${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</span>
+          </span>
+        </div>` : ''}
+
+        <!-- عمليات الشراء -->
+        <div style="margin-top:16px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">عمليات الشراء</div>
+          ${buys.map((t,i) => `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+              <span style="color:var(--text-muted)">${t.date}</span>
+              <span>${(+t.qty).toFixed(4)} سهم</span>
+              <span style="color:var(--text)">${(+t.price).toFixed(2)} USD</span>
+              <span style="color:var(--green)">${(+t.total_orig||(+t.totalOrig)||0).toFixed(2)} USD</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
   const goldTrades = state.trades.filter(t => t.asset === 'gold' && t.type === 'buy').reverse();
   const body = document.getElementById('gold-modal-body');
 
