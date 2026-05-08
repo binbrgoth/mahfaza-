@@ -1157,7 +1157,7 @@
         <div class="chart-title">🥇 سعر الذهب</div>
         <div class="form-group" style="margin-bottom:14px">
           <label>سعر الغرام اليوم (KWD)</label>
-          <input class="form-control" id="p-gold-price" type="number" placeholder="0.000" step="0.001" oninput="renderPrices()">
+          <input class="form-control" id="p-gold-price" type="number" placeholder="0.000" step="0.001" oninput="savePrices()">
         </div>
         <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:13px" id="p-gold-result">
           <div style="color:var(--text-muted);text-align:center">أدخل السعر لمعرفة قيمة ذهبك</div>
@@ -2600,7 +2600,7 @@ function renderPrices() {
           <span style="font-weight:700;color:var(--blue);min-width:50px;font-size:13px">${ticker}</span>
           <input class="form-control p-stock-input" data-ticker="${ticker}" type="number"
             placeholder="0.00" step="0.01" value="${prices.stocks[ticker]||''}"
-            oninput="savePrices();renderPrices()" style="flex:1">
+            oninput="savePrices()" style="flex:1">
         </div>`)
       .join('')
     : '<div style="color:var(--text-muted);font-size:13px">لا توجد أسهم مسجّلة بعد</div>';
