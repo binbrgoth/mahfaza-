@@ -2349,11 +2349,12 @@ function renderStats() {
             const boughtQty   = buys.reduce((s,t)=>s+(+t.qty),0);
             const soldQty     = sells.reduce((s,t)=>s+(+t.qty),0);
             const buyCostUSD  = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
-            const buyCostKWD  = buyCostUSD * avgRate;
+            const buyCostKWD  = buys.reduce((s,t)=>s+(+t.total),0);
             const sellTotalUSD= sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
-            const sellTotalKWD= sellTotalUSD * avgRate;
+            const sellTotalKWD= sells.reduce((s,t)=>s+(+t.total),0)||sellTotalUSD * avgRate;
             const avgBuyUSD   = boughtQty > 0 ? buyCostUSD / boughtQty : 0;
-            const costOfSold  = avgBuyUSD * soldQty * avgRate;
+            const avgBuyKWD   = boughtQty > 0 ? buyCostKWD / boughtQty : 0;
+            const costOfSold  = avgBuyKWD * soldQty;
             const realizedPNL = sellTotalKWD - costOfSold;
             const hasSells    = soldQty > 0;
             const pnlColor    = realizedPNL >= 0 ? 'var(--green)' : 'var(--red)';
