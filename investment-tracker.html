@@ -1415,26 +1415,9 @@
 
 <script>
 // ============================================================
-// SUPABASE CONFIG
+// LOCAL STORAGE ONLY — no external dependencies
 // ============================================================
-const SUPABASE_URL = 'https://mqokgolusufvrawvmxiv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xb2tnb2x1c3VmdnJhd3ZteGl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODc4OTksImV4cCI6MjA5Mzc2Mzg5OX0.59HjqTtbfB5DT8auAOVKonA3aL2Vl5I_JfjDcAjJ-gQ';
-
-async function sbFetch(path, options = {}) {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': options.prefer || 'return=representation',
-      ...options.headers
-    },
-    ...options
-  });
-  if (!res.ok) { const e = await res.text(); throw new Error(e); }
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
-}
+const STORAGE_KEY = 'mahfaza_v3';
 
 // ============================================================
 // DATA STORE
@@ -1449,30 +1432,15 @@ let state = {
   funding: []
 };
 
-// localStorage backup
 function saveLocal() {
-  try { localStorage.setItem('mahfaza_v3', JSON.stringify({ trades: state.trades, funding: state.funding })); } catch(e) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ trades: state.trades, funding: state.funding })); } catch(e) {}
 }
 
 async function loadState() {
-  showLoading(true);
   try {
-    const [trades, funding] = await Promise.all([
-      sbFetch('trades?order=id.desc'),
-      sbFetch('funding?order=id.desc')
-    ]);
-    state.trades  = trades  || [];
-    state.funding = funding || [];
-    saveLocal();
-  } catch(e) {
-    console.error('Supabase load failed, using localStorage:', e);
-    try {
-      const saved = localStorage.getItem('mahfaza_v3');
-      if (saved) { const d = JSON.parse(saved); state.trades = d.trades||[]; state.funding = d.funding||[]; }
-    } catch(e2) {}
-  } finally {
-    showLoading(false);
-  }
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { const d = JSON.parse(saved); state.trades = d.trades||[]; state.funding = d.funding||[]; }
+  } catch(e) {}
   rebuildAssets();
 }
 
@@ -1504,13 +1472,11 @@ function rebuildAssets() {
 }
 
 async function saveTradeToDb(trade) {
-  await sbFetch('trades', { method: 'POST', body: JSON.stringify(trade) });
   state.trades.unshift(trade);
   saveLocal();
 }
 
 async function updateTradeInDb(trade) {
-  await sbFetch('trades?id=eq.' + trade.id, { method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(trade) });
   const idx = state.trades.findIndex(t => t.id === trade.id);
   if (idx !== -1) state.trades[idx] = trade;
   saveLocal();
@@ -1518,20 +1484,17 @@ async function updateTradeInDb(trade) {
 }
 
 async function deleteTradeFromDb(id) {
-  await sbFetch('trades?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
   state.trades = state.trades.filter(t => t.id !== id);
   saveLocal();
   rebuildAssets();
 }
 
 async function saveFundingToDb(f) {
-  await sbFetch('funding', { method: 'POST', body: JSON.stringify(f) });
   state.funding.unshift(f);
   saveLocal();
 }
 
 async function deleteFundingFromDb(id) {
-  await sbFetch('funding?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' });
   state.funding = state.funding.filter(f => f.id !== id);
   saveLocal();
 }
