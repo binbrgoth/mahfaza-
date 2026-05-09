@@ -2319,30 +2319,7 @@ function renderStats() {
   document.getElementById('stat-pnl').textContent = (pnl>=0?'+':'') + pnl.toFixed(3) + ' KWD';
   document.getElementById('stat-pnl').style.color = pnl>=0 ? 'var(--green)' : 'var(--red)';
 
-  // Bar chart
-  const ctx = document.getElementById('barChart').getContext('2d');
-  const assetKeys = Object.keys(state.assets);
-  const buyVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='buy').reduce((s,t)=>s+(+t.total),0));
-  const sellVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='sell').reduce((s,t)=>s+(+t.total),0));
-
-  if (barChartInst) barChartInst.destroy();
-  barChartInst = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: assetKeys.map(k=>state.assets[k].name),
-      datasets: [
-        { label: 'شراء', data: buyVals, backgroundColor: 'rgba(0,168,107,0.7)', borderRadius: 6 },
-        { label: 'بيع', data: sellVals, backgroundColor: 'rgba(232,41,74,0.7)', borderRadius: 6 }
-      ]
-    },
-    options: {
-      plugins: { legend: { labels: { color: '#1A1F36', font: { family: 'Cairo' } } } },
-      scales: {
-        x: { grid: { color: '#DDE0EA' }, ticks: { color: '#6B7A99', font: { family: 'Cairo' } } },
-        y: { grid: { color: '#DDE0EA' }, ticks: { color: '#6B7A99', font: { family: 'Cairo' } } }
-      }
-    }
-  });
+  // Bar chart removed
 
   // ---- تفاصيل الأسهم - عرض كامل ----
   const stocksTable = document.getElementById('stocks-pnl-table');
