@@ -1766,7 +1766,7 @@ async function executeTrade(type) {
   }
 
   // إجمالي بالعملة الأصلية
-  const totalOrig = qty * price + (type === 'buy' ? commission : -commission);
+  const totalOrig = qty * price;
 
   // إجمالي بالدينار
   // للأسهم: نستخدم سعر اليوم للتقدير
@@ -1884,8 +1884,8 @@ function deductFromFunding(assetType, amount) {
 }
 
 function addToFunding(assetType, amount) {
-  // عند البيع — يُعيد المبلغ لصندوق الأسهم
-  const fundType = assetType === 'gold' ? 'gold' : 'stocks';
+  // عند البيع — يُعيد المبلغ لصندوق الأسهم محلياً فقط
+  const fundType = assetType === 'stocks_us' ? 'stocks' : 'gold';
   const isUSD = assetType === 'stocks_us';
   const entry = {
     id: Date.now(),
@@ -1895,7 +1895,7 @@ function addToFunding(assetType, amount) {
     rate: 0,
     note: 'إضافة تلقائية - بيع',
     date: new Date().toLocaleDateString('en-GB'),
-    isDeduction: true  // مخفي من العرض لأنه تلقائي
+    isDeduction: true
   };
   state.funding.unshift(entry);
   saveLocal();
