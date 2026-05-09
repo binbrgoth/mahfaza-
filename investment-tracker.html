@@ -3152,56 +3152,91 @@ function renderStocksDetail() {
     return;
   }
 
-  const rows = tickers.map(ticker => {
+  // احسب بيانات كل سهم
+  const tickerData = tickers.map(ticker => {
     const buys  = state.trades.filter(t => t.ticker===ticker && t.type==='buy');
     const sells = state.trades.filter(t => t.ticker===ticker && t.type==='sell');
     const qty   = buys.reduce((s,t)=>s+(+t.qty),0) - sells.reduce((s,t)=>s+(+t.qty),0);
-    const totalCostUSD = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+    const totalCostUSD   = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
     const totalQtyBought = buys.reduce((s,t)=>s+(+t.qty),0);
-    const avgUSD = totalQtyBought > 0 ? totalCostUSD / totalQtyBought : 0;
-    const avgKWD = avgUSD * avgRate;
-    const currentUSD = prices.stocks[ticker] || 0;
-    const currentKWD = currentUSD * avgRate;
-    const currentValKWD = qty * currentKWD;
-    const costValKWD    = qty * avgKWD;
-    const pnlKWD        = currentValKWD - costValKWD;
-    const pnlPct        = costValKWD ? (pnlKWD/costValKWD*100) : 0;
-    const hasCurrent    = currentUSD > 0;
-    const pnlColor      = pnlKWD >= 0 ? 'var(--green)' : 'var(--red)';
+    const avgUSD         = totalQtyBought > 0 ? totalCostUSD / totalQtyBought : 0;
+    const avgKWD         = avgUSD * avgRate;
+    const currentUSD     = prices.stocks[ticker] || 0;
+    const currentKWD     = currentUSD * avgRate;
+    const currentValKWD  = qty * currentKWD;
+    const costValKWD     = qty * avgKWD;
+    const pnlKWD         = currentValKWD - costValKWD;
+    const pnlPct         = costValKWD ? (pnlKWD/costValKWD*100) : 0;
+    const hasCurrent     = currentUSD > 0;
+    const pnlColor       = pnlKWD >= 0 ? 'var(--green)' : 'var(--red)';
+    return { ticker, qty, avgUSD, avgKWD, totalCostUSD, currentUSD, currentValKWD, costValKWD, pnlKWD, pnlPct, hasCurrent, pnlColor };
+  });
 
-    return `
-      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)">
-        <div style="font-size:16px;font-weight:900;color:var(--blue)">${ticker}</div>
+  // إجماليات
+  const totalCostUSD_all  = tickerData.reduce((s,d)=>s + d.qty * d.avgUSD, 0);
+  const totalCostKWD_all  = tickerData.reduce((s,d)=>s + d.qty * d.avgKWD, 0);
+  const totalValKWD_all   = tickerData.reduce((s,d)=>s + (d.hasCurrent ? d.currentValKWD : 0), 0);
+  const totalPnlKWD_all   = tickerData.reduce((s,d)=>s + (d.hasCurrent ? d.pnlKWD : 0), 0);
+  const totalPct_all      = totalCostKWD_all ? (totalPnlKWD_all / totalCostKWD_all * 100) : 0;
+  const hasAnyPrice       = tickerData.some(d=>d.hasCurrent);
+
+  const rows = tickerData.map(d => `
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        <div style="font-size:16px;font-weight:900;color:var(--blue)">${d.ticker}</div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">الكمية</div>
-          <div style="font-weight:700;font-size:13px">${qty.toFixed(4)}</div>
+          <div style="font-weight:700;font-size:13px">${d.qty.toFixed(4)}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">متوسط الشراء USD</div>
-          <div style="font-weight:700;font-size:13px">${avgUSD.toFixed(2)}</div>
+          <div style="font-weight:700;font-size:13px">${d.avgUSD.toFixed(2)}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">متوسط الشراء KWD</div>
-          <div style="font-weight:700;font-size:13px;color:var(--gold)">${avgKWD.toFixed(3)}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--gold)">${d.avgKWD.toFixed(3)}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">آخر سعر USD</div>
-          <div style="font-weight:700;font-size:13px;color:var(--blue)">${hasCurrent ? currentUSD.toFixed(2) : '—'}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--blue)">${d.hasCurrent ? d.currentUSD.toFixed(2) : '—'}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">القيمة KWD</div>
-          <div style="font-weight:700;font-size:13px;color:var(--blue)">${hasCurrent ? currentValKWD.toFixed(3) : '—'}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--blue)">${d.hasCurrent ? d.currentValKWD.toFixed(3) : '—'}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">الربح / الخسارة</div>
-          <div style="font-weight:800;font-size:13px;color:${pnlColor}">${hasCurrent ? (pnlKWD>=0?'+':'') + pnlKWD.toFixed(3) + ' (' + (pnlPct>=0?'+':'') + pnlPct.toFixed(1) + '%)' : '—'}</div>
+          <div style="font-weight:800;font-size:13px;color:${d.pnlColor}">${d.hasCurrent ? (d.pnlKWD>=0?'+':'') + d.pnlKWD.toFixed(3) + ' (' + (d.pnlPct>=0?'+':'') + d.pnlPct.toFixed(1) + '%)' : '—'}</div>
         </div>
-      </div>`;
-  }).join('');
+      </div>`).join('');
+
+  // سطر الإجمالي
+  const totalRow = `
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;align-items:center;gap:12px;padding:14px 20px;background:var(--bg3);border-top:2px solid var(--border)">
+      <div style="font-size:13px;font-weight:800;color:var(--text)">الإجمالي</div>
+      <div></div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">إجمالي التكلفة USD</div>
+        <div style="font-weight:800;font-size:14px;color:var(--blue)">${totalCostUSD_all.toFixed(2)}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">إجمالي التكلفة KWD</div>
+        <div style="font-weight:800;font-size:14px;color:var(--gold)">${totalCostKWD_all.toFixed(3)}</div>
+      </div>
+      <div></div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">إجمالي القيمة KWD</div>
+        <div style="font-weight:800;font-size:14px;color:var(--blue)">${hasAnyPrice ? totalValKWD_all.toFixed(3) : '—'}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">إجمالي الربح KWD</div>
+        <div style="font-weight:800;font-size:14px;color:${totalPnlKWD_all>=0?'var(--green)':'var(--red)'}">
+          ${hasAnyPrice ? (totalPnlKWD_all>=0?'+':'') + totalPnlKWD_all.toFixed(3) + ' (' + (totalPct_all>=0?'+':'') + totalPct_all.toFixed(1) + '%)' : '—'}
+        </div>
+      </div>
+    </div>`;
 
   body.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
-      <!-- Header -->
       <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr 1fr;gap:12px;padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);min-width:700px">
         <div style="font-size:11px;font-weight:700;color:var(--text-muted)">السهم</div>
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">الكمية</div>
@@ -3211,7 +3246,7 @@ function renderStocksDetail() {
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">القيمة KWD</div>
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-align:center">الربح / الخسارة</div>
       </div>
-      <div style="min-width:700px">${rows}</div>
+      <div style="min-width:700px">${rows}${totalRow}</div>
     </div>`;
 }
 // ============================================================
