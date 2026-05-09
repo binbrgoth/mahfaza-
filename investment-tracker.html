@@ -2308,8 +2308,9 @@ async function clearHistory() {
 let barChartInst = null;
 
 function renderStats() {
-  const totalInvested = state.trades.filter(t=>t.type==='buy').reduce((s,t)=>s+t.total,0);
-  const totalSold = state.trades.filter(t=>t.type==='sell').reduce((s,t)=>s+t.total,0);
+  const avgRate = getAvgRate() || 0.307;
+  const totalInvested = state.trades.filter(t=>t.type==='buy').reduce((s,t)=>s+(+t.total),0);
+  const totalSold = state.trades.filter(t=>t.type==='sell').reduce((s,t)=>s+(+t.total),0);
   const currentVal = getTotalValue();
   const pnl = currentVal + totalSold - totalInvested;
 
@@ -2321,8 +2322,8 @@ function renderStats() {
   // Bar chart
   const ctx = document.getElementById('barChart').getContext('2d');
   const assetKeys = Object.keys(state.assets);
-  const buyVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='buy').reduce((s,t)=>s+t.total,0));
-  const sellVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='sell').reduce((s,t)=>s+t.total,0));
+  const buyVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='buy').reduce((s,t)=>s+(+t.total),0));
+  const sellVals = assetKeys.map(k => state.trades.filter(t=>t.asset===k&&t.type==='sell').reduce((s,t)=>s+(+t.total),0));
 
   if (barChartInst) barChartInst.destroy();
   barChartInst = new Chart(ctx, {
@@ -2330,8 +2331,8 @@ function renderStats() {
     data: {
       labels: assetKeys.map(k=>state.assets[k].name),
       datasets: [
-        { label: 'شراء', data: buyVals, backgroundColor: 'rgba(0,214,143,0.7)', borderRadius: 6 },
-        { label: 'بيع', data: sellVals, backgroundColor: 'rgba(255,77,103,0.7)', borderRadius: 6 }
+        { label: 'شراء', data: buyVals, backgroundColor: 'rgba(0,168,107,0.7)', borderRadius: 6 },
+        { label: 'بيع', data: sellVals, backgroundColor: 'rgba(232,41,74,0.7)', borderRadius: 6 }
       ]
     },
     options: {
@@ -2343,12 +2344,94 @@ function renderStats() {
     }
   });
 
-  // Asset details
+  // ---- تفاصيل الأسهم لكل سهم ----
   const det = document.getElementById('asset-details');
+  const tickers = [...new Set(state.trades.filter(t=>(t.asset==='stocks_us'||t.asset==='stocks')&&t.ticker).map(t=>t.ticker))];
+
+  let tickerHTML = '';
+  if (tickers.length) {
+    tickerHTML = `
+      <div style="margin-top:20px">
+        <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px">📈 تفصيل الأسهم الأمريكية</div>
+        <div style="overflow-x:auto">
+        <div style="min-width:680px">
+        <!-- header -->
+        <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:10px 14px;background:var(--bg3);border-radius:10px 10px 0 0;font-size:11px;font-weight:700;color:var(--text-muted)">
+          <span>السهم</span>
+          <span style="text-align:center">الكمية المشتراة</span>
+          <span style="text-align:center">تكلفة الشراء USD</span>
+          <span style="text-align:center">تكلفة الشراء KWD</span>
+          <span style="text-align:center">الكمية المباعة</span>
+          <span style="text-align:center">إجمالي البيع USD</span>
+          <span style="text-align:center">إجمالي البيع KWD</span>
+          <span style="text-align:center">الربح المحقق KWD</span>
+        </div>
+        ${tickers.map(ticker => {
+          const buys  = state.trades.filter(t=>t.ticker===ticker && t.type==='buy');
+          const sells = state.trades.filter(t=>t.ticker===ticker && t.type==='sell');
+          const boughtQty   = buys.reduce((s,t)=>s+(+t.qty),0);
+          const soldQty     = sells.reduce((s,t)=>s+(+t.qty),0);
+          const buyCostUSD  = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+          const buyCostKWD  = buyCostUSD * avgRate;
+          const sellTotalUSD= sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
+          const sellTotalKWD= sellTotalUSD * avgRate;
+          // Realized PNL: avg buy price × sold qty vs sell proceeds
+          const avgBuyUSD   = boughtQty > 0 ? buyCostUSD / boughtQty : 0;
+          const costOfSold  = avgBuyUSD * soldQty * avgRate;
+          const realizedPNL = sellTotalKWD - costOfSold;
+          const hasSells    = soldQty > 0;
+          const pnlColor    = realizedPNL >= 0 ? 'var(--green)' : 'var(--red)';
+
+          return `
+            <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);align-items:center">
+              <span style="font-size:15px;font-weight:900;color:var(--blue)">${ticker}</span>
+              <span style="text-align:center;font-size:12px;font-weight:600">${boughtQty.toFixed(4)}</span>
+              <span style="text-align:center;font-size:12px">${buyCostUSD.toFixed(2)} USD</span>
+              <span style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</span>
+              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--red)':'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</span>
+              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--text)':'var(--text-muted)'}">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</span>
+              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--text)':'var(--text-muted)'}">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</span>
+              <span style="text-align:center;font-size:13px;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">
+                ${hasSells ? (realizedPNL>=0?'+':'')+realizedPNL.toFixed(3)+' KWD' : '—'}
+              </span>
+            </div>`;
+        }).join('')}
+        <!-- totals -->
+        <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:12px 14px;background:var(--bg3);border-radius:0 0 10px 10px;font-weight:800;font-size:12px">
+          <span style="color:var(--text-muted)">المجموع</span>
+          <span style="text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</span>
+          <span style="text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</span>
+          <span style="text-align:center;color:var(--gold)">${(tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0)*avgRate).toFixed(3)} KWD</span>
+          <span style="text-align:center;color:var(--red)">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</span>
+          <span></span>
+          <span></span>
+          <span style="text-align:center;color:var(--green)">
+            ${(()=>{
+              let total=0;
+              tickers.forEach(ticker=>{
+                const buys=state.trades.filter(t=>t.ticker===ticker&&t.type==='buy');
+                const sells=state.trades.filter(t=>t.ticker===ticker&&t.type==='sell');
+                const boughtQty=buys.reduce((s,t)=>s+(+t.qty),0);
+                const buyCostUSD=buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+                const soldQty=sells.reduce((s,t)=>s+(+t.qty),0);
+                const sellTotalUSD=sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
+                const avgBuyUSD=boughtQty>0?buyCostUSD/boughtQty:0;
+                total+=(sellTotalUSD-avgBuyUSD*soldQty)*avgRate;
+              });
+              return (total>=0?'+':'')+total.toFixed(3)+' KWD';
+            })()}
+          </span>
+        </div>
+        </div>
+        </div>
+      </div>`;
+  }
+
   det.innerHTML = Object.entries(state.assets).map(([key,a]) => {
-    const trades = state.trades.filter(t=>t.asset===key);
-    const bought = trades.filter(t=>t.type==='buy').reduce((s,t)=>s+t.total,0);
-    const sold = trades.filter(t=>t.type==='sell').reduce((s,t)=>s+t.total,0);
+    const trades = state.trades.filter(t=>(t.asset===key||t.asset===key+'_us'||t.asset===key+'_kw'));
+    const bought = trades.filter(t=>t.type==='buy').reduce((s,t)=>s+(+t.total),0);
+    const sold   = trades.filter(t=>t.type==='sell').reduce((s,t)=>s+(+t.total),0);
+    const realizedPNL = sold - bought * (sold ? state.trades.filter(t=>t.asset===key&&t.type==='sell').length / Math.max(1,trades.filter(t=>t.type==='buy').length) : 0);
     const current = a.qty * a.avgPrice;
     return `
       <div style="padding:14px 0;border-bottom:1px solid var(--border)">
@@ -2362,7 +2445,7 @@ function renderStats() {
           <span>الكمية: ${a.qty.toFixed(3)}</span>
         </div>
       </div>`;
-  }).join('');
+  }).join('') + tickerHTML;
 }
 
 // ============================================================
