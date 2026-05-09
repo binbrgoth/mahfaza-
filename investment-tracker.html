@@ -1480,17 +1480,23 @@ function rebuildAssets() {
   state.assets.gold   = { name: 'ذهب',  icon: '🥇', color: '#C9A84C', unit: 'غرام', qty: 0, avgPrice: 0, totalCost: 0 };
   state.assets.stocks = { name: 'أسهم', icon: '📈', color: '#4D8FFF', unit: 'سهم',  qty: 0, avgPrice: 0, totalCost: 0 };
   [...state.trades].reverse().forEach(t => {
-    const key = (t.asset === 'stocks_us' || t.asset === 'stocks_kw' || t.asset === 'stocks') ? 'stocks' : 'gold';
+    const isStocks = (t.asset === 'stocks_us' || t.asset === 'stocks_kw' || t.asset === 'stocks');
+    const key = isStocks ? 'stocks' : 'gold';
     const a = state.assets[key];
     if (!a) return;
+
+    // للأسهم: نستخدم total_orig (USD) لحساب المتوسط
+    // للذهب: نستخدم total (KWD)
+    const costValue = isStocks ? (+t.total_orig || +t.totalOrig || 0) : (+t.total || 0);
+
     if (t.type === 'buy') {
-      const newTotal = a.totalCost + t.total;
-      const newQty   = a.qty + t.qty;
+      const newTotal = a.totalCost + costValue;
+      const newQty   = a.qty + (+t.qty);
       a.avgPrice  = newQty ? newTotal / newQty : 0;
       a.qty       = newQty;
       a.totalCost = newTotal;
     } else {
-      a.qty -= t.qty;
+      a.qty -= (+t.qty);
       if (a.qty <= 0) { a.qty = 0; a.totalCost = 0; a.avgPrice = 0; }
       else { a.totalCost = a.qty * a.avgPrice; }
     }
@@ -1902,7 +1908,11 @@ function addToFunding(assetType, amount) {
 }
 
 function getTotalValue() {
-  return Object.values(state.assets).reduce((s, a) => s + (a.qty * a.avgPrice), 0) + getCashTotal();
+  const prices = loadPrices();
+  const todayRate = prices.usdRate || getAvgRate() || 0.307;
+  const goldVal = state.assets.gold.qty * state.assets.gold.avgPrice;
+  const stocksVal = state.assets.stocks.qty * state.assets.stocks.avgPrice * todayRate;
+  return goldVal + stocksVal + getCashTotal();
 }
 
 // ============================================================
@@ -1934,12 +1944,18 @@ const assetClasses = { gold:'gold', stocks:'stocks' };
 function renderAssetCards() {
   const cont = document.getElementById('asset-cards');
   cont.innerHTML = '';
+  const prices = loadPrices();
+  const todayRate = prices.usdRate || getAvgRate() || 0.307;
 
-  // ذهب وأسهم
   Object.entries(state.assets).forEach(([key, a]) => {
-    const value = a.qty * a.avgPrice;
+    const isStocks = key === 'stocks';
+    // للأسهم: القيمة = كمية × متوسط السعر USD × سعر الصرف اليوم
+    // للذهب: القيمة = كمية × متوسط السعر KWD
+    const value = isStocks ? a.qty * a.avgPrice * todayRate : a.qty * a.avgPrice;
+    const avgDisplay = isStocks
+      ? a.avgPrice.toFixed(2) + ' USD'
+      : a.avgPrice.toFixed(3) + ' KWD';
     const cls = assetClasses[key];
-    const bars = generateSparkBars(key);
     const totalWithCash = getTotalValue();
     const pct = totalWithCash ? (value / totalWithCash * 100) : 0;
     const clickHandler = key === 'gold' ? 'onclick="navTo(\'gold-detail\',\'تفاصيل الذهب\')"' : 'onclick="navTo(\'stocks-detail\',\'تفاصيل الأسهم\')"';
@@ -1952,10 +1968,10 @@ function renderAssetCards() {
         <div class="asset-name">${a.name}</div>
         <div class="asset-value" style="color:${a.color}">${value.toFixed(3)} KWD</div>
         <div class="asset-meta">
-          <span>الكمية: ${a.qty.toFixed(3)}</span>
-          <span>م. السعر: ${a.avgPrice.toFixed(3)}</span>
+          <span>الكمية: <strong>${a.qty.toFixed(isStocks?4:3)}</strong></span>
+          <span>م. السعر: <strong>${avgDisplay}</strong></span>
         </div>
-        <div class="sparkline">${bars}</div>
+        <div class="sparkline">${generateSparkBars(key)}</div>
         <div class="progress-bar">
           <div class="progress-fill" style="width:${pct}%;background:${a.color}"></div>
         </div>
