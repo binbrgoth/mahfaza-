@@ -1743,7 +1743,6 @@ async function executeTrade(type) {
   const mfg = asset === 'gold' ? (+document.getElementById('trade-mfg').value || 0) : 0;
   const commission = (asset === 'stocks_us' || asset === 'stocks_kw') ? (+document.getElementById('trade-commission').value || 0) : 0;
 
-  // Ticker
   let ticker = '';
   if (asset === 'stocks_us') ticker = document.getElementById('trade-ticker').value;
   if (asset === 'stocks_kw') ticker = document.getElementById('trade-kw-ticker').value;
@@ -1751,30 +1750,42 @@ async function executeTrade(type) {
   if (!asset) { showToast('⚠️ يرجى اختيار نوع الأصل'); btn.disabled=false; btn.textContent=origText; btn.style.opacity='1'; return; }
   if (!qty || !price) { showToast('⚠️ يرجى إدخال الكمية والسعر'); btn.disabled=false; btn.textContent=origText; btn.style.opacity='1'; return; }
 
-  // For asset state key — us and kw stocks go under 'stocks'
   const assetKey = asset === 'gold' ? 'gold' : 'stocks';
   const isUSD = asset === 'stocks_us';
-  const avgRate = getAvgRate() || 0.307;
+
+  // سعر الصرف: من أسعار اليوم أولاً، ثم متوسط التمويل
+  const prices = loadPrices();
+  const todayRate = prices.usdRate || 0;
+  const avgRate = todayRate || getAvgRate() || 0.307;
 
   const a = state.assets[assetKey];
-  if (type === 'sell' && qty > a.qty) { showToast('❌ الكمية المراد بيعها أكبر من المتاح'); return; }
+  if (type === 'sell' && qty > a.qty) {
+    showToast('❌ الكمية المراد بيعها أكبر من المتاح');
+    btn.disabled=false; btn.textContent=origText; btn.style.opacity='1';
+    return;
+  }
 
-  // Total in original currency
-  const totalOrig = qty * price + commission;
-  // Total in KWD (for portfolio tracking)
+  // إجمالي بالعملة الأصلية
+  const totalOrig = qty * price + (type === 'buy' ? commission : -commission);
+
+  // إجمالي بالدينار
+  // للأسهم: نستخدم سعر اليوم للتقدير
+  // للذهب: مباشرة بالدينار
   const totalKWD = isUSD ? totalOrig * avgRate : totalOrig;
 
   // التحقق من رصيد التمويل عند الشراء فقط
   if (type === 'buy') {
     const balance = getFundingBalance(asset);
-    const needed = totalOrig;
+    const needed = isUSD ? qty * price + commission : totalOrig;
     if (balance <= 0) {
       showToast('⚠️ يجب تمويل الحساب أولاً قبل إجراء العملية');
+      btn.disabled=false; btn.textContent=origText; btn.style.opacity='1';
       return;
     }
     if (balance < needed) {
       const currency = isUSD ? 'USD' : 'KWD';
       showToast(`⚠️ الرصيد غير كافٍ — المتاح: ${balance.toFixed(isUSD?2:3)} ${currency}`);
+      btn.disabled=false; btn.textContent=origText; btn.style.opacity='1';
       return;
     }
   }
@@ -1787,17 +1798,22 @@ async function executeTrade(type) {
   const trade = {
     id: Date.now(), type, asset, ticker, qty,
     price, commission, currency: isUSD ? 'USD' : 'KWD',
-    total: totalKWD, total_orig: totalOrig, mfg, note,
-    date: displayDate,
+    total: totalKWD,
+    total_orig: isUSD ? qty * price : totalOrig,
+    sell_rate: type === 'sell' && isUSD ? avgRate : 0,
+    mfg, note, date: displayDate,
     time: new Date().toLocaleTimeString('ar-KW', {hour:'2-digit',minute:'2-digit'})
   };
 
   try {
     await saveTradeToDb(trade);
 
-    // خصم من التمويل عند الشراء
     if (type === 'buy') {
-      deductFromFunding(asset, totalOrig);
+      // خصم من التمويل عند الشراء
+      deductFromFunding(asset, isUSD ? qty * price + commission : totalOrig);
+    } else if (type === 'sell' && isUSD) {
+      // البيع يُعيد المبلغ لصندوق الأسهم
+      addToFunding(asset, qty * price - commission);
     }
 
     rebuildAssets();
@@ -1851,7 +1867,6 @@ function getFundingBalance(assetType) {
 }
 
 function deductFromFunding(assetType, amount) {
-  // أضف إدخال سالب (خصم) في سجل التمويل
   const fundType = assetType === 'gold' ? 'gold' : assetType === 'stocks_us' ? 'stocks' : 'cash';
   const isUSD = assetType === 'stocks_us';
   const deduction = {
@@ -1865,6 +1880,24 @@ function deductFromFunding(assetType, amount) {
     isDeduction: true
   };
   state.funding.unshift(deduction);
+  saveLocal();
+}
+
+function addToFunding(assetType, amount) {
+  // عند البيع — يُعيد المبلغ لصندوق الأسهم
+  const fundType = assetType === 'gold' ? 'gold' : 'stocks';
+  const isUSD = assetType === 'stocks_us';
+  const entry = {
+    id: Date.now(),
+    type: fundType,
+    kwd: 0,
+    usd: isUSD ? amount : 0,
+    rate: 0,
+    note: 'إضافة تلقائية - بيع',
+    date: new Date().toLocaleDateString('en-GB'),
+    isDeduction: true  // مخفي من العرض لأنه تلقائي
+  };
+  state.funding.unshift(entry);
   saveLocal();
 }
 
