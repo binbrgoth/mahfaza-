@@ -2378,21 +2378,25 @@ function renderStats() {
     stocksTable.innerHTML = `
       <div class="chart-title">📈 تفصيل الأسهم الأمريكية — الشراء والبيع والربح</div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table style="width:100%;border-collapse:collapse;min-width:750px;font-size:13px">
+      <table style="width:100%;border-collapse:collapse;min-width:1000px;font-size:12px">
         <thead>
           <tr style="background:var(--bg3)">
-            <th style="padding:10px 14px;text-align:right;color:var(--text-muted);font-size:11px;font-weight:700">السهم</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الكمية المشتراة</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">تكلفة الشراء USD</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">تكلفة الشراء KWD</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الكمية المباعة</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">إجمالي البيع USD</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">إجمالي البيع KWD</th>
-            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الربح المحقق KWD</th>
+            <th style="padding:10px 12px;text-align:right;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">السهم</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">م. التكلفة USD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">سعر الوحدة الآن</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">الكمية المشتراة</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">تكلفة الشراء USD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">تكلفة الشراء KWD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">الكمية المباعة</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">إجمالي البيع USD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">إجمالي البيع KWD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">الربح USD</th>
+            <th style="padding:10px 12px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700;border-bottom:1px solid var(--border)">الربح KWD</th>
           </tr>
         </thead>
         <tbody>
           ${tickers.map(ticker => {
+            const prices = loadPrices();
             const buys  = state.trades.filter(t=>t.ticker===ticker && t.type==='buy');
             const sells = state.trades.filter(t=>t.ticker===ticker && t.type==='sell');
             const boughtQty   = buys.reduce((s,t)=>s+(+t.qty),0);
@@ -2404,47 +2408,41 @@ function renderStats() {
             const avgBuyUSD   = boughtQty > 0 ? buyCostUSD / boughtQty : 0;
             const avgBuyKWD   = boughtQty > 0 ? buyCostKWD / boughtQty : 0;
             const costOfSold  = avgBuyKWD * soldQty;
-            const realizedPNL = sellTotalKWD - costOfSold;
+            const realizedPNLkwd = sellTotalKWD - costOfSold;
+            const costOfSoldUSD  = avgBuyUSD * soldQty;
+            const realizedPNLusd = sellTotalUSD - costOfSoldUSD;
             const hasSells    = soldQty > 0;
-            const pnlColor    = realizedPNL >= 0 ? 'var(--green)' : 'var(--red)';
+            const currentUSD  = prices.stocks && prices.stocks[ticker] ? prices.stocks[ticker] : 0;
+            const pnlColor    = realizedPNLkwd >= 0 ? 'var(--green)' : 'var(--red)';
             return `
               <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
-                <td style="padding:12px 14px;font-size:16px;font-weight:900;color:var(--blue)">${ticker}</td>
-                <td style="padding:12px 14px;text-align:center;font-weight:600">${boughtQty.toFixed(4)}</td>
-                <td style="padding:12px 14px;text-align:center">${buyCostUSD.toFixed(2)} USD</td>
-                <td style="padding:12px 14px;text-align:center;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</td>
-                <td style="padding:12px 14px;text-align:center;color:${hasSells?'var(--red)':'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</td>
-                <td style="padding:12px 14px;text-align:center">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</td>
-                <td style="padding:12px 14px;text-align:center">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</td>
-                <td style="padding:12px 14px;text-align:center;font-size:14px;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">
-                  ${hasSells ? (realizedPNL>=0?'+':'')+realizedPNL.toFixed(3)+' KWD' : '—'}
-                </td>
+                <td style="padding:10px 12px;font-size:15px;font-weight:900;color:var(--blue)">${ticker}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:700">${avgBuyUSD.toFixed(2)} USD</td>
+                <td style="padding:10px 12px;text-align:center;color:var(--blue);font-weight:700">${currentUSD ? currentUSD.toFixed(2)+' USD' : '—'}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:600">${boughtQty.toFixed(4)}</td>
+                <td style="padding:10px 12px;text-align:center">${buyCostUSD.toFixed(2)} USD</td>
+                <td style="padding:10px 12px;text-align:center;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</td>
+                <td style="padding:10px 12px;text-align:center;color:${hasSells?'var(--red)":'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</td>
+                <td style="padding:10px 12px;text-align:center">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</td>
+                <td style="padding:10px 12px;text-align:center">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">${hasSells ? (realizedPNLusd>=0?'+':'')+realizedPNLusd.toFixed(2)+' USD' : '—'}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">${hasSells ? (realizedPNLkwd>=0?'+':'')+realizedPNLkwd.toFixed(3)+' KWD' : '—'}</td>
               </tr>`;
           }).join('')}
         </tbody>
         <tfoot>
           <tr style="background:var(--bg3);font-weight:800">
-            <td style="padding:12px 14px;color:var(--text-muted)">المجموع</td>
-            <td style="padding:12px 14px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</td>
-            <td style="padding:12px 14px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</td>
-            <td style="padding:12px 14px;text-align:center;color:var(--gold)">${(tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0)*avgRate).toFixed(3)} KWD</td>
-            <td style="padding:12px 14px;text-align:center;color:var(--red)">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</td>
-            <td></td><td></td>
-            <td style="padding:12px 14px;text-align:center;color:var(--green)">
-              ${(()=>{
-                let total=0;
-                tickers.forEach(ticker=>{
-                  const buys=state.trades.filter(t=>t.ticker===ticker&&t.type==='buy');
-                  const sells=state.trades.filter(t=>t.ticker===ticker&&t.type==='sell');
-                  const boughtQty=buys.reduce((s,t)=>s+(+t.qty),0);
-                  const buyCostUSD=buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
-                  const soldQty=sells.reduce((s,t)=>s+(+t.qty),0);
-                  const sellTotalUSD=sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
-                  const avgBuyUSD=boughtQty>0?buyCostUSD/boughtQty:0;
-                  total+=(sellTotalUSD-avgBuyUSD*soldQty)*avgRate;
-                });
-                return (total>=0?'+':'')+total.toFixed(3)+' KWD';
-              })()}
+            <td style="padding:10px 12px;color:var(--text-muted)" colspan="4">المجموع</td>
+            <td style="padding:10px 12px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</td>
+            <td style="padding:10px 12px;text-align:center;color:var(--gold)">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+(+t.total),0),0).toFixed(3)} KWD</td>
+            <td></td>
+            <td style="padding:10px 12px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</td>
+            <td style="padding:10px 12px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+(+t.total),0),0).toFixed(3)} KWD</td>
+            <td style="padding:10px 12px;text-align:center;color:var(--green)">
+              ${(()=>{let total=0;tickers.forEach(tk=>{const b=state.trades.filter(t=>t.ticker===tk&&t.type==='buy');const s=state.trades.filter(t=>t.ticker===tk&&t.type==='sell');const bq=b.reduce((x,t)=>x+(+t.qty),0);const bc=b.reduce((x,t)=>x+((+(t.total_orig)||+(t.totalOrig)||0)),0);const sc=s.reduce((x,t)=>x+((+(t.total_orig)||+(t.totalOrig)||0)),0);total+=sc-(bq>0?bc/bq:0)*s.reduce((x,t)=>x+(+t.qty),0);});return (total>=0?'+':'')+total.toFixed(2)+' USD';})()}
+            </td>
+            <td style="padding:10px 12px;text-align:center;color:var(--green)">
+              ${(()=>{let total=0;tickers.forEach(tk=>{const b=state.trades.filter(t=>t.ticker===tk&&t.type==='buy');const s=state.trades.filter(t=>t.ticker===tk&&t.type==='sell');const bq=b.reduce((x,t)=>x+(+t.qty),0);const bckwd=b.reduce((x,t)=>x+(+t.total),0);const sckwd=s.reduce((x,t)=>x+(+t.total),0);total+=sckwd-(bq>0?bckwd/bq:0)*s.reduce((x,t)=>x+(+t.qty),0);});return (total>=0?'+':'')+total.toFixed(3)+' KWD';})()}
             </td>
           </tr>
         </tfoot>
