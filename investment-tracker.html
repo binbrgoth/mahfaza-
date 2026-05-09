@@ -2587,9 +2587,10 @@ async function deleteFunding(id) {
 
 function getAvgRate() {
   if (!state.funding || !state.funding.length) return 0;
-  const stocksFunding = state.funding.filter(f => f.type === 'stocks');
-  const totalKWD = stocksFunding.reduce((s, f) => s + f.kwd, 0);
-  const totalUSD = stocksFunding.reduce((s, f) => s + f.usd, 0);
+  // فقط التمويل الأصلي (양수 usd) بدون الخصومات
+  const stocksFunding = state.funding.filter(f => f.type === 'stocks' && !f.isDeduction && f.usd > 0);
+  const totalKWD = stocksFunding.reduce((s, f) => s + (+f.kwd||0), 0);
+  const totalUSD = stocksFunding.reduce((s, f) => s + (+f.usd||0), 0);
   return totalUSD > 0 ? totalKWD / totalUSD : 0;
 }
 
@@ -3413,8 +3414,9 @@ function formatDate(d) {
 // ============================================================
 function getAvgRate() {
   if (!state.funding || !state.funding.length) return 0;
-  const totalKWD = state.funding.reduce((s, f) => s + f.kwd, 0);
-  const totalUSD = state.funding.reduce((s, f) => s + f.usd, 0);
+  const stocksFunding = state.funding.filter(f => f.type === 'stocks' && !f.isDeduction && f.usd > 0);
+  const totalKWD = stocksFunding.reduce((s, f) => s + (+f.kwd||0), 0);
+  const totalUSD = stocksFunding.reduce((s, f) => s + (+f.usd||0), 0);
   return totalUSD > 0 ? totalKWD / totalUSD : 0;
 }
 
