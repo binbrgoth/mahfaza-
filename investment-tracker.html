@@ -974,15 +974,21 @@
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="chart-card">
-        <div class="chart-title">حجم الصفقات حسب الأصل</div>
-        <canvas id="barChart" height="220"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">تفاصيل الأصول</div>
-        <div id="asset-details"></div>
-      </div>
+    <!-- الشارت -->
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">حجم الصفقات حسب الأصل</div>
+      <canvas id="barChart" height="180"></canvas>
+    </div>
+
+    <!-- تفاصيل الأسهم - عرض كامل -->
+    <div class="chart-card" style="margin-bottom:24px">
+      <div id="stocks-pnl-table"></div>
+    </div>
+
+    <!-- تفاصيل الذهب والأصول -->
+    <div class="chart-card">
+      <div class="chart-title">تفاصيل الأصول</div>
+      <div id="asset-details"></div>
     </div>
   </div>
 
@@ -2344,95 +2350,127 @@ function renderStats() {
     }
   });
 
-  // ---- تفاصيل الأسهم لكل سهم ----
-  const det = document.getElementById('asset-details');
+  // ---- تفاصيل الأسهم - عرض كامل ----
+  const stocksTable = document.getElementById('stocks-pnl-table');
   const tickers = [...new Set(state.trades.filter(t=>(t.asset==='stocks_us'||t.asset==='stocks')&&t.ticker).map(t=>t.ticker))];
 
-  let tickerHTML = '';
   if (tickers.length) {
-    tickerHTML = `
-      <div style="margin-top:20px">
-        <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px">📈 تفصيل الأسهم الأمريكية</div>
-        <div style="overflow-x:auto">
-        <div style="min-width:680px">
-        <!-- header -->
-        <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:10px 14px;background:var(--bg3);border-radius:10px 10px 0 0;font-size:11px;font-weight:700;color:var(--text-muted)">
-          <span>السهم</span>
-          <span style="text-align:center">الكمية المشتراة</span>
-          <span style="text-align:center">تكلفة الشراء USD</span>
-          <span style="text-align:center">تكلفة الشراء KWD</span>
-          <span style="text-align:center">الكمية المباعة</span>
-          <span style="text-align:center">إجمالي البيع USD</span>
-          <span style="text-align:center">إجمالي البيع KWD</span>
-          <span style="text-align:center">الربح المحقق KWD</span>
-        </div>
-        ${tickers.map(ticker => {
-          const buys  = state.trades.filter(t=>t.ticker===ticker && t.type==='buy');
-          const sells = state.trades.filter(t=>t.ticker===ticker && t.type==='sell');
-          const boughtQty   = buys.reduce((s,t)=>s+(+t.qty),0);
-          const soldQty     = sells.reduce((s,t)=>s+(+t.qty),0);
-          const buyCostUSD  = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
-          const buyCostKWD  = buyCostUSD * avgRate;
-          const sellTotalUSD= sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
-          const sellTotalKWD= sellTotalUSD * avgRate;
-          // Realized PNL: avg buy price × sold qty vs sell proceeds
-          const avgBuyUSD   = boughtQty > 0 ? buyCostUSD / boughtQty : 0;
-          const costOfSold  = avgBuyUSD * soldQty * avgRate;
-          const realizedPNL = sellTotalKWD - costOfSold;
-          const hasSells    = soldQty > 0;
-          const pnlColor    = realizedPNL >= 0 ? 'var(--green)' : 'var(--red)';
-
-          return `
-            <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);align-items:center">
-              <span style="font-size:15px;font-weight:900;color:var(--blue)">${ticker}</span>
-              <span style="text-align:center;font-size:12px;font-weight:600">${boughtQty.toFixed(4)}</span>
-              <span style="text-align:center;font-size:12px">${buyCostUSD.toFixed(2)} USD</span>
-              <span style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</span>
-              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--red)':'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</span>
-              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--text)':'var(--text-muted)'}">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</span>
-              <span style="text-align:center;font-size:12px;color:${hasSells?'var(--text)':'var(--text-muted)'}">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</span>
-              <span style="text-align:center;font-size:13px;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">
-                ${hasSells ? (realizedPNL>=0?'+':'')+realizedPNL.toFixed(3)+' KWD' : '—'}
-              </span>
-            </div>`;
-        }).join('')}
-        <!-- totals -->
-        <div style="display:grid;grid-template-columns:80px repeat(7,1fr);gap:8px;padding:12px 14px;background:var(--bg3);border-radius:0 0 10px 10px;font-weight:800;font-size:12px">
-          <span style="color:var(--text-muted)">المجموع</span>
-          <span style="text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</span>
-          <span style="text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</span>
-          <span style="text-align:center;color:var(--gold)">${(tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0)*avgRate).toFixed(3)} KWD</span>
-          <span style="text-align:center;color:var(--red)">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</span>
-          <span></span>
-          <span></span>
-          <span style="text-align:center;color:var(--green)">
-            ${(()=>{
-              let total=0;
-              tickers.forEach(ticker=>{
-                const buys=state.trades.filter(t=>t.ticker===ticker&&t.type==='buy');
-                const sells=state.trades.filter(t=>t.ticker===ticker&&t.type==='sell');
-                const boughtQty=buys.reduce((s,t)=>s+(+t.qty),0);
-                const buyCostUSD=buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
-                const soldQty=sells.reduce((s,t)=>s+(+t.qty),0);
-                const sellTotalUSD=sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
-                const avgBuyUSD=boughtQty>0?buyCostUSD/boughtQty:0;
-                total+=(sellTotalUSD-avgBuyUSD*soldQty)*avgRate;
-              });
-              return (total>=0?'+':'')+total.toFixed(3)+' KWD';
-            })()}
-          </span>
-        </div>
-        </div>
-        </div>
+    stocksTable.innerHTML = `
+      <div class="chart-title">📈 تفصيل الأسهم الأمريكية — الشراء والبيع والربح</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;border-collapse:collapse;min-width:750px;font-size:13px">
+        <thead>
+          <tr style="background:var(--bg3)">
+            <th style="padding:10px 14px;text-align:right;color:var(--text-muted);font-size:11px;font-weight:700">السهم</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الكمية المشتراة</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">تكلفة الشراء USD</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">تكلفة الشراء KWD</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الكمية المباعة</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">إجمالي البيع USD</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">إجمالي البيع KWD</th>
+            <th style="padding:10px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-weight:700">الربح المحقق KWD</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tickers.map(ticker => {
+            const buys  = state.trades.filter(t=>t.ticker===ticker && t.type==='buy');
+            const sells = state.trades.filter(t=>t.ticker===ticker && t.type==='sell');
+            const boughtQty   = buys.reduce((s,t)=>s+(+t.qty),0);
+            const soldQty     = sells.reduce((s,t)=>s+(+t.qty),0);
+            const buyCostUSD  = buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+            const buyCostKWD  = buyCostUSD * avgRate;
+            const sellTotalUSD= sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
+            const sellTotalKWD= sellTotalUSD * avgRate;
+            const avgBuyUSD   = boughtQty > 0 ? buyCostUSD / boughtQty : 0;
+            const costOfSold  = avgBuyUSD * soldQty * avgRate;
+            const realizedPNL = sellTotalKWD - costOfSold;
+            const hasSells    = soldQty > 0;
+            const pnlColor    = realizedPNL >= 0 ? 'var(--green)' : 'var(--red)';
+            return `
+              <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:12px 14px;font-size:16px;font-weight:900;color:var(--blue)">${ticker}</td>
+                <td style="padding:12px 14px;text-align:center;font-weight:600">${boughtQty.toFixed(4)}</td>
+                <td style="padding:12px 14px;text-align:center">${buyCostUSD.toFixed(2)} USD</td>
+                <td style="padding:12px 14px;text-align:center;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</td>
+                <td style="padding:12px 14px;text-align:center;color:${hasSells?'var(--red)':'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</td>
+                <td style="padding:12px 14px;text-align:center">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</td>
+                <td style="padding:12px 14px;text-align:center">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</td>
+                <td style="padding:12px 14px;text-align:center;font-size:14px;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">
+                  ${hasSells ? (realizedPNL>=0?'+':'')+realizedPNL.toFixed(3)+' KWD' : '—'}
+                </td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:var(--bg3);font-weight:800">
+            <td style="padding:12px 14px;color:var(--text-muted)">المجموع</td>
+            <td style="padding:12px 14px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</td>
+            <td style="padding:12px 14px;text-align:center">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0).toFixed(2)} USD</td>
+            <td style="padding:12px 14px;text-align:center;color:var(--gold)">${(tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='buy').reduce((a,t)=>a+((+(t.total_orig)||+(t.totalOrig)||0)),0),0)*avgRate).toFixed(3)} KWD</td>
+            <td style="padding:12px 14px;text-align:center;color:var(--red)">${tickers.reduce((s,tk)=>s+state.trades.filter(t=>t.ticker===tk&&t.type==='sell').reduce((a,t)=>a+(+t.qty),0),0).toFixed(4)}</td>
+            <td></td><td></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--green)">
+              ${(()=>{
+                let total=0;
+                tickers.forEach(ticker=>{
+                  const buys=state.trades.filter(t=>t.ticker===ticker&&t.type==='buy');
+                  const sells=state.trades.filter(t=>t.ticker===ticker&&t.type==='sell');
+                  const boughtQty=buys.reduce((s,t)=>s+(+t.qty),0);
+                  const buyCostUSD=buys.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||0)),0);
+                  const soldQty=sells.reduce((s,t)=>s+(+t.qty),0);
+                  const sellTotalUSD=sells.reduce((s,t)=>s+((+(t.total_orig)||+(t.totalOrig)||(+t.price*(+t.qty))||0)),0);
+                  const avgBuyUSD=boughtQty>0?buyCostUSD/boughtQty:0;
+                  total+=(sellTotalUSD-avgBuyUSD*soldQty)*avgRate;
+                });
+                return (total>=0?'+':'')+total.toFixed(3)+' KWD';
+              })()}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
       </div>`;
+  } else {
+    stocksTable.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">لا توجد صفقات أسهم بعد</div>`;
   }
+
+  // ---- تفاصيل الأصول (ذهب + أسهم) ----
+  const det = document.getElementById('asset-details');
+
+  // Gold sell detail
+  const goldSells = state.trades.filter(t=>t.asset==='gold'&&t.type==='sell');
+  const goldBuys  = state.trades.filter(t=>t.asset==='gold'&&t.type==='buy');
+  const goldSoldQty   = goldSells.reduce((s,t)=>s+(+t.qty),0);
+  const goldSoldKWD   = goldSells.reduce((s,t)=>s+(+t.total),0);
+  const goldBoughtQty = goldBuys.reduce((s,t)=>s+(+t.qty),0);
+  const goldAvgBuy    = goldBoughtQty > 0 ? goldBuys.reduce((s,t)=>s+(+t.total),0) / goldBoughtQty : 0;
+  const goldCostOfSold= goldAvgBuy * goldSoldQty;
+  const goldPNL       = goldSoldKWD - goldCostOfSold;
 
   det.innerHTML = Object.entries(state.assets).map(([key,a]) => {
     const trades = state.trades.filter(t=>(t.asset===key||t.asset===key+'_us'||t.asset===key+'_kw'));
     const bought = trades.filter(t=>t.type==='buy').reduce((s,t)=>s+(+t.total),0);
     const sold   = trades.filter(t=>t.type==='sell').reduce((s,t)=>s+(+t.total),0);
-    const realizedPNL = sold - bought * (sold ? state.trades.filter(t=>t.asset===key&&t.type==='sell').length / Math.max(1,trades.filter(t=>t.type==='buy').length) : 0);
     const current = a.qty * a.avgPrice;
+
+    // Gold extra detail
+    const goldExtra = key === 'gold' && goldSoldQty > 0 ? `
+      <div style="margin-top:10px;padding:10px;background:${goldPNL>=0?'rgba(0,168,107,0.08)':'rgba(232,41,74,0.08)'};border-radius:8px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--text-muted)">الكمية المباعة</span>
+          <span style="color:var(--red);font-weight:700">${goldSoldQty.toFixed(3)} غ</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--text-muted)">إجمالي البيع</span>
+          <span style="font-weight:700">${goldSoldKWD.toFixed(3)} KWD</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text-muted)">الربح المحقق</span>
+          <span style="font-weight:800;color:${goldPNL>=0?'var(--green)':'var(--red)'}">
+            ${goldPNL>=0?'+':''}${goldPNL.toFixed(3)} KWD
+          </span>
+        </div>
+      </div>` : '';
+
     return `
       <div style="padding:14px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
@@ -2444,8 +2482,9 @@ function renderStats() {
           <span>إجمالي البيع: <span style="color:var(--red)">${sold.toFixed(3)}</span></span>
           <span>الكمية: ${a.qty.toFixed(3)}</span>
         </div>
+        ${goldExtra}
       </div>`;
-  }).join('') + tickerHTML;
+  }).join('');
 }
 
 // ============================================================
