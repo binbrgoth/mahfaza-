@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الجرد — السوق المركزي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c27;
+    --bg3: #1e2333;
+    --card: #232840;
+    --border: #2e3555;
+    --accent: #4f8ef7;
+    --accent2: #38d9a9;
+    --warn: #f7c948;
+    --danger: #f7546a;
+    --text: #eef0f8;
+    --muted: #7b84a8;
+    --green: #38d9a9;
+    --red: #f7546a;
+    --gold: #f7c948;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 20px;
+  }
+
+  .hstat {
+    text-align: center;
+  }
+
+  .hstat-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent2);
+  }
+
+  .hstat-lbl {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+
+  .tab {
+    padding: 14px 20px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN */
+  main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SCANNER SECTION */
+  .scanner-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .scanner-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .scanner-body {
+    padding: 24px;
+  }
+
+  #video-container {
+    position: relative;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    max-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .scan-frame {
+    width: 220px;
+    height: 140px;
+    position: relative;
+  }
+
+  .scan-frame::before, .scan-frame::after,
+  .scan-frame span::before, .scan-frame span::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .scan-frame::before { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+  .scan-frame::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+  .scan-frame span::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+  .scan-frame span::after  { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+
+  .scan-line {
+    position: absolute;
+    left: 4px; right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanLine 2s ease-in-out infinite;
+    top: 50%;
+  }
+
+  @keyframes scanLine {
+    0%   { top: 10%; opacity: 1; }
+    50%  { top: 90%; opacity: 1; }
+    100% { top: 10%; opacity: 1; }
+  }
+
+  .camera-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .camera-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+
+  .scan-result {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: none;
+    animation: fadeUp 0.3s ease;
+    margin-bottom: 16px;
+  }
+
+  .scan-result.show { display: block; }
+
+  .scan-result-code {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+  }
+
+  .scan-result-name {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .form-control {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .manual-input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .manual-input-row .form-control { flex: 1; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3a7bd5; transform: translateY(-1px); }
+
+  .btn-success { background: var(--green); color: #000; }
+  .btn-success:hover { background: #2dc99a; transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #e0405a; }
+
+  .btn-full { width: 100%; }
+
+  /* ITEMS TABLE */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .tbl thead th {
+    background: var(--bg3);
+    padding: 12px 16px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .tbl tbody td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .tbl tbody tr:last-child td { border-bottom: none; }
+  .tbl tbody tr:hover { background: rgba(79,142,247,0.05); }
+
+  .diff-pos { color: var(--green); font-weight: 700; }
+  .diff-neg { color: var(--red); font-weight: 700; }
+  .diff-zero { color: var(--muted); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .badge-ok { background: rgba(56,217,169,0.15); color: var(--green); }
+  .badge-short { background: rgba(247,84,106,0.15); color: var(--red); }
+  .badge-over { background: rgba(247,201,72,0.15); color: var(--gold); }
+
+  /* REPORT */
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .report-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .report-val {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .report-lbl {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 480px;
+    max-width: 95vw;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+
+  /* CAMERA TOGGLE */
+  .cam-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    transition: all 0.2s;
+  }
+
+  .cam-btn.active {
+    background: rgba(79,142,247,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulseDot 1s ease-in-out infinite;
+  }
+
+  .pulse-dot.on { background: var(--green); }
+
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .report-grid { grid-template-columns: 1fr 1fr; }
+    .header-stats { gap: 12px; }
+    .hstat-val { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📦</div>
+    نظام الجرد
+  </div>
+  <div class="header-stats">
+    <div class="hstat">
+      <div class="hstat-val" id="h-total">0</div>
+      <div class="hstat-lbl">إجمالي الأصناف</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="h-scanned" style="color:var(--gold)">0</div>
+      <div class="hstat-lbl">تم جرده</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="h-diff" style="color:var(--red)">0</div>
+      <div class="hstat-lbl">فروقات</div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('scan')">📷 مسح وجرد</button>
+  <button class="tab" onclick="showTab('items')">📋 نتائج الجرد</button>
+  <button class="tab" onclick="showTab('catalog')">🗂️ الكتالوج</button>
+  <button class="tab" onclick="showTab('report')">📊 التقرير</button>
+</div>
+
+<main>
+
+  <!-- ===== TAB: SCAN ===== -->
+  <div id="tab-scan" class="page active">
+
+    <div class="scanner-wrap">
+      <div class="scanner-header">
+        <span>📷 قارئ الباركود</span>
+        <button class="cam-btn" id="cam-toggle-btn" onclick="toggleCamera()">
+          <div class="pulse-dot" id="pulse-dot"></div>
+          <span id="cam-btn-text">تشغيل الكاميرا</span>
+        </button>
+      </div>
+      <div class="scanner-body">
+        <div id="video-container">
+          <div class="camera-placeholder" id="cam-placeholder">
+            <div class="icon">📷</div>
+            <div>اضغط "تشغيل الكاميرا" لبدء المسح</div>
+          </div>
+          <video id="video" autoplay playsinline style="display:none"></video>
+          <div class="scan-overlay" id="scan-overlay" style="display:none">
+            <div class="scan-frame">
+              <span></span>
+              <div class="scan-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- مدخل يدوي -->
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase">أو أدخل الكود يدوياً</label>
+          <div class="manual-input-row" style="margin-top:8px">
+            <input class="form-control" id="manual-code" type="text" placeholder="كود الصنف..." onkeydown="if(event.key==='Enter') lookupCode()">
+            <button class="btn btn-primary" onclick="lookupCode()">بحث</button>
+          </div>
+        </div>
+
+        <!-- نتيجة المسح -->
+        <div class="scan-result" id="scan-result">
+          <div class="scan-result-code" id="res-code">—</div>
+          <div class="scan-result-name" id="res-name">—</div>
+        </div>
+
+        <!-- فورم الجرد -->
+        <div id="scan-form" style="display:none">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>اسم الصنف</label>
+              <input class="form-control" id="f-name" type="text" placeholder="اسم الصنف">
+            </div>
+            <div class="form-group">
+              <label>التكلفة (KWD)</label>
+              <input class="form-control" id="f-cost" type="number" step="0.001" placeholder="0.000">
+            </div>
+            <div class="form-group">
+              <label>الكمية الفعلية (النظام)</label>
+              <input class="form-control" id="f-actual" type="number" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>الكمية المجرودة</label>
+              <input class="form-control" id="f-counted" type="number" placeholder="0" style="border-color:var(--accent)">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-success" style="flex:1" onclick="saveItem()">✅ حفظ الجرد</button>
+            <button class="btn btn-outline" onclick="clearForm()">إلغاء</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB: ITEMS ===== -->
+  <div id="tab-items" class="page">
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>📋 جميع الأصناف المجرودة</span>
+        <div style="display:flex;gap:8px">
+          <input class="form-control" id="search-box" type="text" placeholder="بحث..." style="width:180px;padding:8px 12px;font-size:13px" oninput="renderItems()">
+          <button class="btn btn-danger btn-outline" onclick="confirmClearAll()" style="padding:8px 14px;font-size:13px;color:var(--red);border-color:var(--red)">🗑️ مسح الكل</button>
+        </div>
+      </div>
+      <div id="items-body"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: REPORT ===== -->
+  <div id="tab-report" class="page">
+    <div class="report-grid" id="report-cards"></div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>📊 تقرير الجرد التفصيلي</span>
+        <button class="btn btn-primary" onclick="printReport()" style="padding:8px 18px;font-size:13px">🖨️ طباعة</button>
+      </div>
+      <div id="report-body"></div>
+    </div>
+  </div>
+
+
+  <!-- ===== TAB: CATALOG ===== -->
+  <div id="tab-catalog" class="page">
+    <div class="table-wrap">
+      <div class="table-header">
+        <span>🗂️ كتالوج الأصناف (39 صنف)</span>
+        <input class="form-control" id="cat-search" type="text" placeholder="بحث..." style="width:200px;padding:8px 12px;font-size:13px" oninput="renderCatalog()">
+      </div>
+      <div id="catalog-body"></div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL حذف -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <div class="modal-title">🗑️ تأكيد الحذف</div>
+    <p style="color:var(--muted);margin-bottom:24px">هل تريد حذف هذا الصنف من سجل الجرد؟</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmDelete()">حذف</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('modal-delete')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL مسح الكل -->
+<div class="modal-overlay" id="modal-clear">
+  <div class="modal">
+    <div class="modal-title">⚠️ مسح جميع البيانات</div>
+    <p style="color:var(--muted);margin-bottom:24px">سيتم حذف جميع بيانات الجرد. هذا الإجراء لا يمكن التراجع عنه!</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-danger" style="flex:1" onclick="clearAll()">مسح الكل</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('modal-clear')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ============================================================
+// قائمة الأصناف الرئيسية (مستوردة من ملف Excel)
+// ============================================================
+const CATALOG = [{"code": "003897", "name": "سرج قدرة وتحمل سيتزي فايبر - ازرق", "actual": 8, "cost": 1}, {"code": "005737", "name": "سرج خيالة يورو رايدير مخمل - اصفر", "actual": 16, "cost": 2}, {"code": "001224", "name": "سرج قدرة وتحمل سيتزي - اصفر", "actual": 2, "cost": 3}, {"code": "001227", "name": "سرج قدرة وتحمل سيتزي - اسود", "actual": 14, "cost": 4}, {"code": "001222", "name": "سرج قدرة وتحمل فاما - احمر", "actual": 8, "cost": 5}, {"code": "003895", "name": "سرج طقم كابوي - اصفر", "actual": 8, "cost": 6}, {"code": "003840", "name": "سرج قدرة وتحمل سيتزي فايبر - احمر", "actual": 9, "cost": 7}, {"code": "001231", "name": "سرج قدرة وتحمل افيا - اسود", "actual": 14, "cost": 8}, {"code": "000124", "name": "سرج ستيتس قدرة و تحمل - أحمر 18 انش", "actual": 4, "cost": 9}, {"code": "000379", "name": "سرج خيالة ستيتس جلد - أزرق - 18 انش", "actual": 28, "cost": 10}, {"code": "001226", "name": "سرج قدرة وتحمل سيتزي - احمر", "actual": 13, "cost": 11}, {"code": "003301", "name": "وهابية زينة ازرق", "actual": 1, "cost": 12}, {"code": "003896", "name": "سرج قدرة وتحمل سيتزي فايبر - أسود", "actual": 5, "cost": 13}, {"code": "005815", "name": "سرج ستيتس مخمل - قياس 16 -اسود", "actual": 4, "cost": 14}, {"code": "000127", "name": "سرج ستيتس قدرة و تحمل - اسوّد 18 انش", "actual": 6, "cost": 15}, {"code": "000381", "name": "سرج خيالة ستيتس جلد - أصفر - 18 انش", "actual": 37, "cost": 16}, {"code": "001230", "name": "سرج قدرة وتحمل افيا - احمر", "actual": 11, "cost": 17}, {"code": "000125", "name": "سرج ستيتس قدرة و تحمل - أصفر 18 انش", "actual": 1, "cost": 18}, {"code": "000169", "name": "سرج خيالة ستيتس مخمل - احمّر - 18 انش", "actual": 35, "cost": 19}, {"code": "005736", "name": "سرج خيالة يورو رايدير مخمل - احمر", "actual": 10, "cost": 20}, {"code": "005817", "name": "سرج ستيتس مخمل - قياس 16 -ازرق", "actual": 4, "cost": 21}, {"code": "005816", "name": "سرج ستيتس مخمل - قياس 16 -احمر", "actual": 9, "cost": 22}, {"code": "000382", "name": "سرج ريس ستيتس جلد لماع - أسود - 12 انش", "actual": 3, "cost": 23}, {"code": "001223", "name": "سرج قدرة وتحمل فاما - اسود", "actual": 4, "cost": 24}, {"code": "001229", "name": "سرج قدرة وتحمل افيا - ازرق", "actual": 8, "cost": 25}, {"code": "000170", "name": "سرج خيالة ستيتس مخمل - أزرق - 18 انش", "actual": 2, "cost": 26}, {"code": "005818", "name": "سرج ستيتس مخمل - قياس 16 -اصفر", "actual": 8, "cost": 27}, {"code": "005823", "name": "سرج جلد هندي pvc - أسود - xpony", "actual": 21, "cost": 28}, {"code": "000383", "name": "سرج ريس ستيتس جلد لماع - أحمر - 12 أنش", "actual": 10, "cost": 29}, {"code": "003841", "name": "سرج قدرة وتحمل سيتزي فايبر - اصفر", "actual": 9, "cost": 30}, {"code": "000384", "name": "سرج ريس ستيتس جلد لماع - أزرق - 12 أنش", "actual": 18, "cost": 31}, {"code": "000049", "name": "سرج طقم كابوي - احمر", "actual": 3, "cost": 32}, {"code": "001225", "name": "سرج قدرة وتحمل سيتزي - ازرق", "actual": 18, "cost": 33}, {"code": "001221", "name": "سرج قدرة وتحمل فاما - ازرق", "actual": 9, "cost": 34}, {"code": "000380", "name": "سرج خيالة ستيتس جلد - أحمر - 18 انش", "actual": 27, "cost": 35}, {"code": "000126", "name": "سرج ستيتس قدرة و تحمل - أزرق 18 انش", "actual": 7, "cost": 36}, {"code": "000171", "name": "سرج خيالة ستيتس مخمل - أصفّر - 18 انش", "actual": 41, "cost": 37}, {"code": "000378", "name": "سرج خيالة ستيتس جلد - أسود - 18 انش", "actual": 22, "cost": 38}, {"code": "001228", "name": "سرج قدرة وتحمل افيا - اصفر", "actual": 2, "cost": 38}];
+
+function initCatalog() {
+  // احفظ الكتالوج في localStorage إذا لم يكن موجوداً
+  if (!localStorage.getItem('jareed_catalog')) {
+    localStorage.setItem('jareed_catalog', JSON.stringify(CATALOG));
+  }
+}
+
+function getCatalog() {
+  try {
+    const d = localStorage.getItem('jareed_catalog');
+    return d ? JSON.parse(d) : CATALOG;
+  } catch(e) { return CATALOG; }
+}
+
+function lookupInCatalog(code) {
+  const catalog = getCatalog();
+  // normalize: pad to 6 digits
+  const normalized = String(code).padStart(6, '0');
+  return catalog.find(c => String(c.code) === normalized) || null;
+}
+
+// ============================================================
+// DATA
+// ============================================================
+const KEY = 'jareed_v1';
+let items = [];
+let pendingDeleteCode = null;
+let cameraRunning = false;
+let codeReader = null;
+let currentCode = '';
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(items));
+  updateHeaderStats();
+}
+
+function load() {
+  try {
+    const d = localStorage.getItem(KEY);
+    if (d) items = JSON.parse(d);
+  } catch(e) { items = []; }
+  initCatalog();
+  updateHeaderStats();
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+
+  if (id === 'items') renderItems();
+  if (id === 'report') renderReport();
+  if (id === 'catalog') renderCatalog();
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
+async function toggleCamera() {
+  if (cameraRunning) {
+    stopCamera();
+  } else {
+    startCamera();
+  }
+}
+
+async function startCamera() {
+  try {
+    const { BrowserMultiFormatReader } = ZXing;
+    codeReader = new BrowserMultiFormatReader();
+
+    const videoEl = document.getElementById('video');
+    const placeholder = document.getElementById('cam-placeholder');
+    const overlay = document.getElementById('scan-overlay');
+    const btn = document.getElementById('cam-toggle-btn');
+    const dot = document.getElementById('pulse-dot');
+    const btnText = document.getElementById('cam-btn-text');
+
+    videoEl.style.display = 'block';
+    placeholder.style.display = 'none';
+    overlay.style.display = 'flex';
+    btn.classList.add('active');
+    dot.classList.add('on');
+    btnText.textContent = 'إيقاف الكاميرا';
+    cameraRunning = true;
+
+    await codeReader.decodeFromVideoDevice(null, videoEl, (result, err) => {
+      if (result) {
+        const code = result.getText();
+        if (code !== currentCode) {
+          currentCode = code;
+          onCodeDetected(code);
+        }
+      }
+    });
+  } catch(e) {
+    showToast('❌ تعذّر فتح الكاميرا: ' + e.message);
+    stopCamera();
+  }
+}
+
+function stopCamera() {
+  if (codeReader) {
+    codeReader.reset();
+    codeReader = null;
+  }
+  const videoEl = document.getElementById('video');
+  const placeholder = document.getElementById('cam-placeholder');
+  const overlay = document.getElementById('scan-overlay');
+  const btn = document.getElementById('cam-toggle-btn');
+  const dot = document.getElementById('pulse-dot');
+  const btnText = document.getElementById('cam-btn-text');
+
+  videoEl.style.display = 'none';
+  placeholder.style.display = 'block';
+  overlay.style.display = 'none';
+  btn.classList.remove('active');
+  dot.classList.remove('on');
+  btnText.textContent = 'تشغيل الكاميرا';
+  cameraRunning = false;
+  currentCode = '';
+}
+
+function onCodeDetected(code) {
+  // صوت بسيط
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
+  } catch(e) {}
+
+  fillForm(code);
+}
+
+function lookupCode() {
+  const code = document.getElementById('manual-code').value.trim();
+  if (!code) { showToast('⚠️ أدخل الكود'); return; }
+  fillForm(code);
+}
+
+function fillForm(code) {
+  const existing = items.find(i => i.code === code);
+
+  const normalizedCode = String(code).padStart(6, '0');
+  code = normalizedCode;
+  document.getElementById('scan-result').classList.add('show');
+  document.getElementById('res-code').textContent = code;
+  document.getElementById('scan-form').style.display = 'block';
+
+  if (existing) {
+    document.getElementById('res-name').textContent = existing.name + ' (تم جرده - يمكن التعديل)';
+    document.getElementById('f-name').value = existing.name;
+    document.getElementById('f-cost').value = existing.cost;
+    document.getElementById('f-actual').value = existing.actual;
+    document.getElementById('f-counted').value = existing.counted;
+    showToast('📦 صنف مجرود: ' + existing.name);
+  } else {
+    // ابحث في الكتالوج
+    const cat = lookupInCatalog(code);
+    if (cat) {
+      document.getElementById('res-name').textContent = cat.name + ' — من الكتالوج ✓';
+      document.getElementById('f-name').value = cat.name;
+      document.getElementById('f-cost').value = cat.cost;
+      document.getElementById('f-actual').value = cat.actual;
+      document.getElementById('f-counted').value = '';
+      showToast('✅ ' + cat.name);
+    } else {
+      document.getElementById('res-name').textContent = 'صنف غير موجود في الكتالوج';
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-cost').value = '';
+      document.getElementById('f-actual').value = '';
+      document.getElementById('f-counted').value = '';
+      showToast('⚠️ كود غير موجود: ' + code);
+    }
+  }
+
+  document.getElementById('f-counted').focus();
+}
+
+function saveItem() {
+  const code = document.getElementById('res-code').textContent;
+  const name = document.getElementById('f-name').value.trim();
+  const cost = parseFloat(document.getElementById('f-cost').value) || 0;
+  const actual = parseInt(document.getElementById('f-actual').value) || 0;
+  const counted = parseInt(document.getElementById('f-counted').value);
+
+  if (!code || code === '—') { showToast('⚠️ لا يوجد كود'); return; }
+  if (!name) { showToast('⚠️ أدخل اسم الصنف'); return; }
+  if (isNaN(counted)) { showToast('⚠️ أدخل الكمية المجرودة'); return; }
+
+  const diff = counted - actual;
+  const existing = items.findIndex(i => i.code === code);
+
+  const item = { code, name, cost, actual, counted, diff, time: new Date().toLocaleString('ar-KW') };
+
+  if (existing !== -1) {
+    items[existing] = item;
+    showToast('✏️ تم تحديث: ' + name);
+  } else {
+    items.unshift(item);
+    showToast('✅ تم حفظ: ' + name);
+  }
+
+  save();
+  clearForm();
+}
+
+function clearForm() {
+  document.getElementById('scan-result').classList.remove('show');
+  document.getElementById('scan-form').style.display = 'none';
+  document.getElementById('res-code').textContent = '—';
+  document.getElementById('res-name').textContent = '—';
+  document.getElementById('manual-code').value = '';
+  ['f-name','f-cost','f-actual','f-counted'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  currentCode = '';
+}
+
+// ============================================================
+// ITEMS
+// ============================================================
+function renderItems() {
+  const q = (document.getElementById('search-box').value || '').trim().toLowerCase();
+  const filtered = q ? items.filter(i =>
+    i.code.toLowerCase().includes(q) ||
+    i.name.toLowerCase().includes(q)
+  ) : items;
+
+  const body = document.getElementById('items-body');
+
+  if (!filtered.length) {
+    body.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>لا توجد أصناف</p></div>`;
+    return;
+  }
+
+  body.innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>الكود</th>
+          <th>الاسم</th>
+          <th>التكلفة</th>
+          <th>الفعلية</th>
+          <th>المجرودة</th>
+          <th>الفرق</th>
+          <th>الحالة</th>
+          <th>وقت الجرد</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(i => {
+          const diffClass = i.diff > 0 ? 'diff-pos' : i.diff < 0 ? 'diff-neg' : 'diff-zero';
+          const diffSign = i.diff > 0 ? '+' : '';
+          const badge = i.diff === 0
+            ? '<span class="badge badge-ok">مطابق ✓</span>'
+            : i.diff > 0
+              ? '<span class="badge badge-over">زيادة ▲</span>'
+              : '<span class="badge badge-short">نقص ▼</span>';
+          return `
+          <tr>
+            <td style="font-weight:800;color:var(--accent);letter-spacing:1px">${i.code}</td>
+            <td style="font-weight:600">${i.name}</td>
+            <td>${i.cost.toFixed(3)} KWD</td>
+            <td>${i.actual}</td>
+            <td style="color:var(--gold);font-weight:700">${i.counted}</td>
+            <td class="${diffClass}">${diffSign}${i.diff}</td>
+            <td>${badge}</td>
+            <td style="color:var(--muted);font-size:12px">${i.time}</td>
+            <td><button onclick="deleteItem('${i.code}')" style="background:rgba(247,84,106,0.15);border:none;border-radius:6px;padding:5px 10px;color:var(--red);cursor:pointer;font-size:12px">حذف</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function deleteItem(code) {
+  pendingDeleteCode = code;
+  document.getElementById('modal-delete').classList.add('open');
+}
+
+function confirmDelete() {
+  items = items.filter(i => i.code !== pendingDeleteCode);
+  save();
+  renderItems();
+  closeModal('modal-delete');
+  showToast('🗑️ تم الحذف');
+}
+
+function confirmClearAll() {
+  document.getElementById('modal-clear').classList.add('open');
+}
+
+function clearAll() {
+  items = [];
+  save();
+  renderItems();
+  closeModal('modal-clear');
+  showToast('🗑️ تم مسح جميع البيانات');
+}
+
+// ============================================================
+// REPORT
+// ============================================================
+function renderReport() {
+  const total = items.length;
+  const matched = items.filter(i => i.diff === 0).length;
+  const shortage = items.filter(i => i.diff < 0).length;
+  const excess = items.filter(i => i.diff > 0).length;
+  const totalShortageVal = items.filter(i => i.diff < 0).reduce((s, i) => s + Math.abs(i.diff) * i.cost, 0);
+  const totalExcessVal = items.filter(i => i.diff > 0).reduce((s, i) => s + i.diff * i.cost, 0);
+
+  document.getElementById('report-cards').innerHTML = `
+    <div class="report-card">
+      <div class="report-val" style="color:var(--accent)">${total}</div>
+      <div class="report-lbl">إجمالي الأصناف المجرودة</div>
+    </div>
+    <div class="report-card">
+      <div class="report-val" style="color:var(--green)">${matched}</div>
+      <div class="report-lbl">أصناف مطابقة</div>
+    </div>
+    <div class="report-card">
+      <div class="report-val" style="color:var(--red)">${shortage}</div>
+      <div class="report-lbl">أصناف بنقص</div>
+    </div>
+    <div class="report-card">
+      <div class="report-val" style="color:var(--gold)">${excess}</div>
+      <div class="report-lbl">أصناف بزيادة</div>
+    </div>
+    <div class="report-card" style="grid-column: span 2">
+      <div class="report-val" style="color:var(--red)">${totalShortageVal.toFixed(3)} KWD</div>
+      <div class="report-lbl">قيمة النقص الكلية</div>
+    </div>
+    <div class="report-card" style="grid-column: span 2">
+      <div class="report-val" style="color:var(--gold)">${totalExcessVal.toFixed(3)} KWD</div>
+      <div class="report-lbl">قيمة الزيادة الكلية</div>
+    </div>`;
+
+  const body = document.getElementById('report-body');
+  if (!items.length) {
+    body.innerHTML = `<div class="empty-state"><div class="icon">📊</div><p>لا توجد بيانات للتقرير بعد</p></div>`;
+    return;
+  }
+
+  // فرز: النقص أولاً
+  const sorted = [...items].sort((a, b) => a.diff - b.diff);
+
+  body.innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الكود</th>
+          <th>الاسم</th>
+          <th>التكلفة</th>
+          <th>الفعلية</th>
+          <th>المجرودة</th>
+          <th>الفرق</th>
+          <th>قيمة الفرق</th>
+          <th>الحالة</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((i, idx) => {
+          const diffClass = i.diff > 0 ? 'diff-pos' : i.diff < 0 ? 'diff-neg' : 'diff-zero';
+          const diffSign = i.diff > 0 ? '+' : '';
+          const diffVal = Math.abs(i.diff) * i.cost;
+          const diffValStr = i.diff !== 0 ? (i.diff > 0 ? '+' : '-') + diffVal.toFixed(3) + ' KWD' : '—';
+          const badge = i.diff === 0
+            ? '<span class="badge badge-ok">مطابق</span>'
+            : i.diff > 0
+              ? '<span class="badge badge-over">زيادة</span>'
+              : '<span class="badge badge-short">نقص</span>';
+          return `
+          <tr>
+            <td style="color:var(--muted)">${idx+1}</td>
+            <td style="font-weight:800;color:var(--accent)">${i.code}</td>
+            <td style="font-weight:600">${i.name}</td>
+            <td>${i.cost.toFixed(3)}</td>
+            <td>${i.actual}</td>
+            <td style="color:var(--gold);font-weight:700">${i.counted}</td>
+            <td class="${diffClass}">${diffSign}${i.diff}</td>
+            <td class="${diffClass}">${diffValStr}</td>
+            <td>${badge}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function updateHeaderStats() {
+  document.getElementById('h-total').textContent = items.length;
+  document.getElementById('h-scanned').textContent = items.length;
+  document.getElementById('h-diff').textContent = items.filter(i => i.diff !== 0).length;
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function printReport() {
+  window.print();
+}
+
+// إغلاق المودال عند الضغط خارجه
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+
+// ============================================================
+// CATALOG PAGE
+// ============================================================
+function renderCatalog() {
+  const q = (document.getElementById('cat-search').value || '').trim().toLowerCase();
+  const catalog = getCatalog();
+  const filtered = q ? catalog.filter(c =>
+    String(c.code).includes(q) || c.name.toLowerCase().includes(q)
+  ) : catalog;
+
+  const body = document.getElementById('catalog-body');
+  if (!filtered.length) {
+    body.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>لا توجد نتائج</p></div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الباركود</th>
+          <th>اسم الصنف</th>
+          <th>الكمية الفعلية</th>
+          <th>التكلفة (KWD)</th>
+          <th>حالة الجرد</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map((c, i) => {
+          const jareed = items.find(it => String(it.code) === String(c.code));
+          const status = jareed
+            ? '<span class="badge badge-ok">✓ تم جرده</span>'
+            : '<span class="badge" style="background:rgba(79,142,247,0.15);color:var(--accent)">لم يُجرد</span>';
+          return `
+          <tr>
+            <td style="color:var(--muted)">${i+1}</td>
+            <td style="font-weight:800;color:var(--accent);letter-spacing:1px">${c.code}</td>
+            <td style="font-weight:600">${c.name}</td>
+            <td>${c.actual}</td>
+            <td>${Number(c.cost).toFixed(3)}</td>
+            <td>${status}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+</script>
+</body>
+</html>
