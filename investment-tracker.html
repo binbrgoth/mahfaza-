@@ -1694,9 +1694,7 @@ function updateSummary(side) {
   } else { s.style.display = 'none'; }
 }
 
-['trade-qty','trade-price','trade-mfg'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => updateSummary('trade'));
-});
+// تأجيل ربط الأحداث حتى بعد تحميل الصفحة — سيتم في DOMContentLoaded
 
 async function executeTrade(type) {
   const btn = document.getElementById('trade-confirm-btn');
@@ -3397,14 +3395,44 @@ function setTodayDateFunding() {
   if (el) el.value = val;
 }
 
-const script = document.createElement('script');
-script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
-script.onload = async () => {
-  await loadState();
-  renderDashboard();
-  setTodayDate();
-};
-document.head.appendChild(script);
+// ============================================================
+// INIT — بعد اكتمال تحميل DOM
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+
+  // ربط أحداث حقول صفقة الشراء/البيع
+  ['trade-qty','trade-price','trade-mfg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => updateSummary('trade'));
+  });
+
+  // تحميل Chart.js ثم تهيئة التطبيق
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+  script.onload = async () => {
+    await loadState();
+    renderDashboard();
+    setTodayDate();
+  };
+  script.onerror = async () => {
+    // محاولة بديلة إذا فشل تحميل Chart.js
+    await loadState();
+    setTodayDate();
+    // عرض رسالة بدلاً من الرسوم البيانية
+    ['lineChart','pieChart'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#6B7A99';
+        ctx.font = '14px Cairo';
+        ctx.textAlign = 'center';
+        ctx.fillText('تعذّر تحميل الرسم البياني', canvas.width/2, canvas.height/2);
+      }
+    });
+  };
+  document.head.appendChild(script);
+
+});
 </script>
 </body>
 </html>
