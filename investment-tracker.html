@@ -2384,7 +2384,7 @@ function renderStats() {
                 <td style="padding:10px 12px;text-align:center;font-weight:600">${boughtQty.toFixed(4)}</td>
                 <td style="padding:10px 12px;text-align:center">${buyCostUSD.toFixed(2)} USD</td>
                 <td style="padding:10px 12px;text-align:center;color:var(--gold);font-weight:600">${buyCostKWD.toFixed(3)} KWD</td>
-                <td style="padding:10px 12px;text-align:center;color:${hasSells?'var(--red)":'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</td>
+                <td style="padding:10px 12px;text-align:center;color:${hasSells?'var(--red)':'var(--text-muted)'}">${hasSells ? soldQty.toFixed(4) : '—'}</td>
                 <td style="padding:10px 12px;text-align:center">${hasSells ? sellTotalUSD.toFixed(2)+' USD' : '—'}</td>
                 <td style="padding:10px 12px;text-align:center">${hasSells ? sellTotalKWD.toFixed(3)+' KWD' : '—'}</td>
                 <td style="padding:10px 12px;text-align:center;font-weight:800;color:${hasSells?pnlColor:'var(--text-muted)'}">${hasSells ? (realizedPNLusd>=0?'+':'')+realizedPNLusd.toFixed(2)+' USD' : '—'}</td>
