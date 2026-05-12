@@ -1164,50 +1164,57 @@
 
     <div class="section-title" style="margin-bottom:20px">💹 أسعار اليوم</div>
 
-    <!-- سعر الصرف -->
-    <div class="chart-card" style="margin-bottom:20px">
-      <div class="chart-title">💱 سعر الدولار اليوم</div>
-      <div style="display:flex;gap:16px;align-items:flex-end">
+    <!-- سعر الدولار -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="chart-title" style="margin:0">💱 سعر الدولار اليوم</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="usd-last-update">—</div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
         <div class="form-group" style="flex:1;margin:0">
           <label>1 USD = ؟ KWD</label>
-          <input class="form-control" id="p-usd-rate" type="number" placeholder="0.0000" step="0.0001" oninput="savePrices();renderPrices()">
+          <input class="form-control" id="p-usd-rate" type="number" placeholder="0.0000" step="0.0001" oninput="savePrices();renderPrices();updateTimestamp('usd')">
         </div>
-        <div style="flex:1;background:var(--bg3);border-radius:10px;padding:14px;text-align:center;font-size:13px">
-          <div style="color:var(--text-muted);margin-bottom:4px">1 KWD = ؟ USD</div>
-          <strong id="p-kwd-rate" style="color:var(--gold);font-size:18px">—</strong>
+        <div style="flex:1;background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+          <div style="color:var(--text-muted);font-size:12px;margin-bottom:4px">1 KWD = ؟ USD</div>
+          <strong id="p-kwd-rate" style="color:var(--gold);font-size:20px">—</strong>
         </div>
       </div>
     </div>
 
-    <!-- فورم الأسعار -->
-    <div class="grid-2" style="margin-bottom:24px">
-
-      <!-- الذهب -->
-      <div class="chart-card">
-        <div class="chart-title">🥇 سعر الذهب</div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>سعر الغرام اليوم (KWD)</label>
-          <input class="form-control" id="p-gold-price" type="number" placeholder="0.000" step="0.001" oninput="savePrices()">
+    <!-- سعر الذهب -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="chart-title" style="margin:0">🥇 سعر الذهب اليوم</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="gold-last-update">—</div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
+        <div class="form-group" style="flex:1;margin:0">
+          <label>سعر الغرام (KWD)</label>
+          <input class="form-control" id="p-gold-price" type="number" placeholder="0.000" step="0.001" oninput="savePrices();updateTimestamp('gold')">
         </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:13px" id="p-gold-result">
+        <div style="flex:1;background:var(--bg3);border-radius:10px;padding:14px;font-size:13px" id="p-gold-result">
           <div style="color:var(--text-muted);text-align:center">أدخل السعر لمعرفة قيمة ذهبك</div>
         </div>
       </div>
+    </div>
 
-      <!-- الأسهم -->
-      <div class="chart-card">
-        <div class="chart-title">📈 أسعار الأسهم (USD)</div>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px" id="p-stocks-inputs">
-          <!-- تتولد تلقائياً -->
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:13px" id="p-stocks-result">
-          <div style="color:var(--text-muted);text-align:center">أدخل الأسعار لمعرفة قيمة أسهمك</div>
-        </div>
+    <!-- أسعار الأسهم -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="chart-title" style="margin:0">📈 أسعار الأسهم اليوم (USD)</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="stocks-last-update">—</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px" id="p-stocks-inputs">
+        <!-- تتولد تلقائياً -->
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:13px" id="p-stocks-result">
+        <div style="color:var(--text-muted);text-align:center">أدخل الأسعار لمعرفة قيمة أسهمك</div>
       </div>
     </div>
 
     <!-- زر الحفظ -->
-    <button class="btn btn-gold" style="width:100%;margin-bottom:20px" onclick="savePricesToDb()">💾 حفظ الأسعار</button>
+    <button class="btn btn-gold" style="width:100%;margin-bottom:16px" onclick="savePricesToDb()">💾 حفظ الأسعار</button>
 
     <!-- ملخص المحفظة بالأسعار الحالية -->
     <div class="chart-card">
@@ -1568,7 +1575,7 @@ function showPage(id) {
   if (id === 'cash-detail') renderCashDetail();
   if (id === 'stats') renderStats();
   if (id === 'goal') renderGoal();
-  if (id === 'prices') renderPrices();
+  if (id === 'prices') { renderPrices(); loadTimestamps(); }
 }
 
 // ============================================================
@@ -2760,6 +2767,31 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================================
 // PRICES - أسعار اليوم
 // ============================================================
+
+function updateTimestamp(type) {
+  const now = new Date();
+  const timeStr = 'آخر تحديث: ' + now.toLocaleTimeString('ar-KW', {hour:'2-digit',minute:'2-digit'}) + ' — ' + now.toLocaleDateString('ar-KW');
+  const elMap = {usd:'usd-last-update', gold:'gold-last-update', stocks:'stocks-last-update'};
+  const el = document.getElementById(elMap[type]);
+  if (el) el.textContent = timeStr;
+  // save timestamp
+  const ts = JSON.parse(localStorage.getItem('mahfaza_price_ts')||'{}');
+  ts[type] = now.toISOString();
+  localStorage.setItem('mahfaza_price_ts', JSON.stringify(ts));
+}
+
+function loadTimestamps() {
+  const ts = JSON.parse(localStorage.getItem('mahfaza_price_ts')||'{}');
+  const elMap = {usd:'usd-last-update', gold:'gold-last-update', stocks:'stocks-last-update'};
+  Object.entries(ts).forEach(([type, iso]) => {
+    const el = document.getElementById(elMap[type]);
+    if (el && iso) {
+      const d = new Date(iso);
+      el.textContent = 'آخر تحديث: ' + d.toLocaleTimeString('ar-KW', {hour:'2-digit',minute:'2-digit'}) + ' — ' + d.toLocaleDateString('ar-KW');
+    }
+  });
+}
+
 function savePrices() {
   const prices = {
     gold: +document.getElementById('p-gold-price').value || 0,
@@ -2847,7 +2879,7 @@ function renderPrices() {
           <span style="font-weight:700;color:var(--blue);min-width:50px;font-size:13px">${ticker}</span>
           <input class="form-control p-stock-input" data-ticker="${ticker}" type="number"
             placeholder="0.00" step="0.01" value="${prices.stocks[ticker]||''}"
-            oninput="savePrices()" style="flex:1">
+            oninput="savePrices();updateTimestamp('stocks')" style="flex:1">
           ${prices.stocks[ticker] && effectiveRate ? `<span style="font-size:12px;color:var(--gold);min-width:70px;text-align:left">${(prices.stocks[ticker]*effectiveRate).toFixed(3)} KWD</span>` : ''}
         </div>`)
       .join('')
