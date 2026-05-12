@@ -762,6 +762,7 @@
     color: var(--blue);
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -3398,7 +3399,7 @@ function setTodayDateFunding() {
 // ============================================================
 // INIT — بعد اكتمال تحميل DOM
 // ============================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
 
   // ربط أحداث حقول صفقة الشراء/البيع
   ['trade-qty','trade-price','trade-mfg'].forEach(id => {
@@ -3406,31 +3407,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (el) el.addEventListener('input', () => updateSummary('trade'));
   });
 
-  // تحميل Chart.js ثم تهيئة التطبيق
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
-  script.onload = async () => {
-    await loadState();
-    renderDashboard();
-    setTodayDate();
-  };
-  script.onerror = async () => {
-    // محاولة بديلة إذا فشل تحميل Chart.js
-    await loadState();
-    setTodayDate();
-    // عرض رسالة بدلاً من الرسوم البيانية
-    ['lineChart','pieChart'].forEach(id => {
-      const canvas = document.getElementById(id);
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#6B7A99';
-        ctx.font = '14px Cairo';
-        ctx.textAlign = 'center';
-        ctx.fillText('تعذّر تحميل الرسم البياني', canvas.width/2, canvas.height/2);
-      }
-    });
-  };
-  document.head.appendChild(script);
+  // تهيئة التطبيق (Chart.js محمّل من الـ head)
+  await loadState();
+  renderDashboard();
+  setTodayDate();
 
 });
 </script>
