@@ -1683,7 +1683,8 @@ function updateSummary(side) {
 
   if (q && p) {
     s.style.display = 'block';
-    const total = q * p;
+    // للذهب: الإجمالي = (الكمية × السعر) + المصنعية
+    const total = asset === 'gold' ? (q * p) + mfg : q * p;
     document.getElementById(side+'-total').textContent = total.toFixed(isUSD ? 2 : 3);
     const currLabel = document.getElementById(side+'-currency-label');
     if (currLabel) currLabel.textContent = isUSD ? ' USD' : ' KWD';
@@ -1745,8 +1746,8 @@ async function executeTrade(type) {
 
   // إجمالي بالدينار
   // للأسهم: نستخدم سعر اليوم للتقدير
-  // للذهب: مباشرة بالدينار
-  const totalKWD = isUSD ? totalOrig * avgRate : totalOrig;
+  // للذهب: مباشرة بالدينار + المصنعية
+  const totalKWD = isUSD ? totalOrig * avgRate : (asset === 'gold' ? totalOrig + mfg : totalOrig);
 
   // التحقق من رصيد التمويل عند الشراء فقط
   if (type === 'buy') {
