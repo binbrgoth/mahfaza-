@@ -694,6 +694,105 @@ body {
 </div>
 
 <script>
+
+// ===== SUPABASE CONFIG =====
+const SUPABASE_URL = 'https://rlohlwldezrrlabpepoo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsb2hsd2xkZXpycmxhYnBlcG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNzQ2NzMsImV4cCI6MjA5NDc1MDY3M30.ydzy6pP92J6K1a6duaU0BH4Va5BmmN2YrvhVlMALnNs';
+
+const sb = {
+  headers: {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
+
+  async get(table, query='') {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: this.headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async upsert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { ...this.headers, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(Array.isArray(data) ? data : [data])
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async insert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(Array.isArray(data) ? data : [data])
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async delete(table, query) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+      method: 'DELETE',
+      headers: this.headers
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return true;
+  }
+};
+
+// Cache محلي للسرعة
+let itemsDB = {};
+let jareedHistory = {};
+
+async function loadAllData() {
+  try {
+    showLoading(true);
+    // تحميل الأصناف
+    const items = await sb.get('items', 'order=name.asc');
+    itemsDB = {};
+    items.forEach(i => {
+      itemsDB[i.code] = {
+        code: i.code, name: i.name, store: i.store,
+        actual: i.actual, sellPrice: i.sell_price, buyPrice: i.buy_price
+      };
+    });
+
+    // تحميل الجرد
+    const jareed = await sb.get('jareed', 'order=counted_at.asc');
+    jareedHistory = {};
+    jareed.forEach(j => {
+      if (!jareedHistory[j.item_code]) jareedHistory[j.item_code] = { attempts: [], counted: 0 };
+      const timeStr = new Date(j.counted_at).toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' });
+      jareedHistory[j.item_code].attempts.push({ qty: j.qty, time: timeStr, id: j.id });
+      jareedHistory[j.item_code].counted += j.qty;
+    });
+
+    showLoading(false);
+  } catch(e) {
+    showLoading(false);
+    console.error('خطأ في تحميل البيانات:', e);
+  }
+}
+
+function showLoading(show) {
+  let el = document.getElementById('globalLoader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'globalLoader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(26,35,64,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;';
+    el.innerHTML = '<div style="font-size:40px">⏳</div><div style="color:white;font-family:Cairo,sans-serif;font-size:16px;font-weight:800">جاري التحميل...</div>';
+    document.body.appendChild(el);
+  }
+  el.style.display = show ? 'flex' : 'none';
+}
+
+// تشغيل عند فتح الصفحة
+window.addEventListener('load', loadAllData);
+
+
 // SLIDER
 let currentSlide = 0;
 const totalSlides = 4;
@@ -749,45 +848,44 @@ function removeFile() {
   document.getElementById('importResult').style.display = 'none';
 }
 
-function importData() {
+async function importData() {
   if (!selectedFile) return;
   const btn = document.getElementById('importBtn');
   btn.innerHTML = '⏳ جاري الاستيراد...';
   btn.disabled = true;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-      // تخطي الصف الأول (العناوين)
       const dataRows = rows.slice(1).filter(r => r[0] || r[1]);
-
-      const existing = JSON.parse(localStorage.getItem('itemsDB') || '{}');
+      const toUpsert = [];
       let newCount = 0, dupCount = 0;
 
       dataRows.forEach(r => {
-        // الأعمدة: كود الصنف، اسم الصنف، المخزن، الكمية الدفترية، سعر البيع، سعر الشراء
         const code = String(r[0] || '').trim();
         const name = String(r[1] || '').trim();
         const store = String(r[2] || '1').trim();
         const actual = parseFloat(r[3]) || 0;
-        const sellPrice = parseFloat(r[4]) || 0;
-        const buyPrice = parseFloat(r[5]) || 0;
-
+        const sell_price = parseFloat(r[4]) || 0;
+        const buy_price = parseFloat(r[5]) || 0;
         if (!code) return;
-        if (existing[code]) dupCount++; else newCount++;
-
-        existing[code] = { code, name, store, actual, sellPrice, buyPrice };
+        if (itemsDB[code]) dupCount++; else newCount++;
+        toUpsert.push({ code, name, store, actual, sell_price, buy_price });
       });
 
-      localStorage.setItem('itemsDB', JSON.stringify(existing));
-
-      // تحديث قاعدة البيانات في الذاكرة
-      Object.assign(itemsDB, existing);
+      // حفظ في Supabase
+      if (toUpsert.length > 0) {
+        await sb.upsert('items', toUpsert);
+        // تحديث الكاش المحلي
+        toUpsert.forEach(i => {
+          itemsDB[i.code] = { code: i.code, name: i.name, store: i.store, actual: i.actual, sellPrice: i.sell_price, buyPrice: i.buy_price };
+        });
+      }
 
       const total = newCount + dupCount;
       document.getElementById('resTotal').textContent = total;
@@ -799,7 +897,7 @@ function importData() {
       btn.disabled = false;
       removeFile();
     } catch(err) {
-      alert('خطأ في قراءة الملف: ' + err.message);
+      alert('خطأ: ' + err.message);
       btn.innerHTML = '<span>📥</span> استيراد';
       btn.disabled = false;
     }
@@ -840,10 +938,10 @@ let cameraActive = false;
 let currentItem = null;
 
 // قاعدة بيانات الأصناف - تُحمَّل من localStorage
-const itemsDB = JSON.parse(localStorage.getItem('itemsDB') || '{}');
+// itemsDB و jareedHistory يتم تحميلهم من Supabase في loadAllData
 
 // تاريخ الجرد
-let jareedHistory = JSON.parse(localStorage.getItem('jareedHistory') || '{}');
+// jareedHistory محمّل من Supabase
 
 function toggleCamera() {
   if (cameraActive) {
@@ -923,51 +1021,65 @@ function loadItem(barcode) {
   document.getElementById('itemCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function saveJareed() {
+async function saveJareed() {
   if (!currentItem) return;
   const qty = parseFloat(document.getElementById('qtyInput').value);
   if (isNaN(qty) || qty < 0) { alert('أدخل كمية صحيحة'); return; }
 
   const barcode = currentItem.barcode;
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' });
-
-  jareedHistory[barcode].attempts.push({ qty, time: timeStr });
-  jareedHistory[barcode].counted += qty;
-
-  localStorage.setItem('jareedHistory', JSON.stringify(jareedHistory));
-
-  document.getElementById('iCounted').textContent = jareedHistory[barcode].counted;
-  document.getElementById('iAttempts').textContent = jareedHistory[barcode].attempts.length;
-  document.getElementById('qtyInput').value = '';
-
-  // فلاش تأكيد
   const btn = document.querySelector('.btn-save-jareed');
-  btn.innerHTML = '✅ تم الحفظ!';
-  btn.style.background = 'linear-gradient(135deg, #2451c8, #1a3fa8)';
-  setTimeout(() => {
+  btn.innerHTML = '⏳ جاري الحفظ...';
+  btn.disabled = true;
+
+  try {
+    // حفظ في Supabase
+    const result = await sb.insert('jareed', { item_code: barcode, qty });
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' });
+
+    if (!jareedHistory[barcode]) jareedHistory[barcode] = { attempts: [], counted: 0 };
+    jareedHistory[barcode].attempts.push({ qty, time: timeStr, id: result[0]?.id });
+    jareedHistory[barcode].counted += qty;
+
+    document.getElementById('iCounted').textContent = jareedHistory[barcode].counted;
+    document.getElementById('iAttempts').textContent = jareedHistory[barcode].attempts.length;
+    document.getElementById('qtyInput').value = '';
+
+    btn.innerHTML = '✅ تم الحفظ!';
+    btn.style.background = 'linear-gradient(135deg, #2451c8, #1a3fa8)';
+    setTimeout(() => {
+      btn.innerHTML = '💾 حفظ الجرد';
+      btn.style.background = '';
+      btn.disabled = false;
+    }, 1500);
+  } catch(e) {
+    alert('خطأ في الحفظ: ' + e.message);
     btn.innerHTML = '💾 حفظ الجرد';
-    btn.style.background = '';
-  }, 1500);
+    btn.disabled = false;
+  }
 }
 
-function resetItem() {
+async function resetItem() {
   if (!currentItem) return;
   if (!confirm('هل تريد تصفير جرد هذا الصنف؟')) return;
-  jareedHistory[currentItem.barcode] = { attempts: [], counted: 0 };
-  localStorage.setItem('jareedHistory', JSON.stringify(jareedHistory));
-  document.getElementById('iCounted').textContent = '0';
-  document.getElementById('iAttempts').textContent = '0';
-  document.getElementById('qtyInput').value = '';
+  try {
+    await sb.delete('jareed', 'item_code=eq.' + encodeURIComponent(currentItem.barcode));
+    jareedHistory[currentItem.barcode] = { attempts: [], counted: 0 };
+    document.getElementById('iCounted').textContent = '0';
+    document.getElementById('iAttempts').textContent = '0';
+    document.getElementById('qtyInput').value = '';
+  } catch(e) { alert('خطأ: ' + e.message); }
 }
 
-function resetAll() {
+async function resetAll() {
   if (!confirm('هل تريد تصفير جميع بيانات الجرد؟')) return;
-  jareedHistory = {};
-  localStorage.removeItem('jareedHistory');
-  currentItem = null;
-  document.getElementById('itemCard').style.display = 'none';
-  document.getElementById('qtyInput').value = '';
+  try {
+    await sb.delete('jareed', 'id=neq.00000000-0000-0000-0000-000000000000');
+    jareedHistory = {};
+    currentItem = null;
+    document.getElementById('itemCard').style.display = 'none';
+    document.getElementById('qtyInput').value = '';
+  } catch(e) { alert('خطأ: ' + e.message); }
 }
 
 function showHistory() {
@@ -1137,24 +1249,24 @@ function closeAddItem() {
   document.getElementById('addItemModal').classList.remove('open');
 }
 
-function saveNewItem() {
+async function saveNewItem() {
   const code = document.getElementById('addCode').value.trim();
   const name = document.getElementById('addName').value.trim();
   if (!code || !name) { alert('كود الصنف والاسم مطلوبان'); return; }
 
-  const db = JSON.parse(localStorage.getItem('itemsDB') || '{}');
-  db[code] = {
-    code,
-    name,
-    store: document.getElementById('addStore').value.trim() || '1',
-    sellPrice: parseFloat(document.getElementById('addSell').value) || 0,
-    buyPrice: parseFloat(document.getElementById('addBuy').value) || 0,
-    actual: parseFloat(document.getElementById('addActual').value) || 0,
-  };
-  localStorage.setItem('itemsDB', JSON.stringify(db));
-  Object.assign(itemsDB, db);
-  closeAddItem();
-  renderAsnaf();
+  try {
+    const item = {
+      code, name,
+      store: document.getElementById('addStore').value.trim() || '1',
+      sell_price: parseFloat(document.getElementById('addSell').value) || 0,
+      buy_price: parseFloat(document.getElementById('addBuy').value) || 0,
+      actual: parseFloat(document.getElementById('addActual').value) || 0,
+    };
+    await sb.upsert('items', item);
+    itemsDB[code] = { code, name, store: item.store, actual: item.actual, sellPrice: item.sell_price, buyPrice: item.buy_price };
+    closeAddItem();
+    renderAsnaf();
+  } catch(e) { alert('خطأ في الحفظ: ' + e.message); }
 }
 
 document.getElementById('addItemModal').addEventListener('click', function(e) {
