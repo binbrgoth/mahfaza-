@@ -1584,7 +1584,6 @@ function exportData(type) {
   items.forEach(item => {
     const counted = jareedHistory[item.code]?.counted || 0;
     const diff = counted - item.actual;
-
     if (type === 'all') { filtered.push(item); filename = 'جميع_الاصناف'; }
     else if (type === 'match' && counted > 0 && diff === 0) { filtered.push(item); filename = 'الاصناف_المطابقة'; }
     else if (type === 'plus' && diff > 0) { filtered.push(item); filename = 'الاصناف_الزائدة'; }
@@ -1593,37 +1592,8 @@ function exportData(type) {
     else if (type === 'report') { filtered.push(item); filename = 'تقرير_تفصيلي'; }
   });
 
-  if (filtered.length === 0) {
-    showExportToast('لا توجد بيانات للتصدير');
-    return;
-  }
+  if (filtered.length === 0) { showExportToast('لا توجد بيانات للتصدير'); return; }
 
-  // بناء الصفوف
-  let headers, rows;
-
-  if (type === 'report') {
-    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق','الحالة'];
-    rows = filtered.map(item => {
-      const counted = jareedHistory[item.code]?.counted || 0;
-      const diff = counted - item.actual;
-      const diffVal = diff * (item.buyPrice || 0);
-      const status = diff === 0 ? (counted === 0 ? 'غير مجرود' : 'مطابق') : diff > 0 ? 'زيادة' : 'نقص';
-      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice || 0, item.sellPrice || 0, diffVal.toFixed(3), status];
-    });
-  } else if (!includeJareed) {
-    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','سعر البيع','سعر الشراء'];
-    rows = filtered.map(i => [i.code, i.name, i.store, i.actual, i.sellPrice || 0, i.buyPrice || 0]);
-  } else {
-    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق'];
-    rows = filtered.map(item => {
-      const counted = jareedHistory[item.code]?.counted || 0;
-      const diff = counted - item.actual;
-      const diffVal = diff * (item.buyPrice || 0);
-      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice || 0, item.sellPrice || 0, diffVal.toFixed(3)];
-    });
-  }
-
-  // إنشاء Excel مع عنوان القسم في أول سطر
   const titles = {
     'all': 'تصدير البيانات بالكامل',
     'match': 'الاصناف المطابقة',
@@ -1632,20 +1602,80 @@ function exportData(type) {
     'notcounted': 'الاصناف الغير مجرودة',
     'report': 'تقرير تفصيلي'
   };
-  const date = new Date().toLocaleDateString('ar-KW');
-  const titleRow = `"${titles[type]} - تاريخ: ${date}"`;
-  const bom = '\uFEFF';
-  const csv = bom + [titleRow, headers.map(v => `"${v}"`).join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const titleText = titles[type] + ' - تاريخ: ' + new Date().toLocaleDateString('ar-KW');
 
-  a.href = url;
+  let headers, rows;
+  if (type === 'report') {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق','الحالة'];
+    rows = filtered.map(item => {
+      const counted = jareedHistory[item.code]?.counted || 0;
+      const diff = counted - item.actual;
+      const diffVal = diff * (item.buyPrice || 0);
+      const status = diff === 0 ? (counted === 0 ? 'غير مجرود' : 'مطابق') : diff > 0 ? 'زيادة' : 'نقص';
+      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice||0, item.sellPrice||0, parseFloat(diffVal.toFixed(3)), status];
+    });
+  } else if (!includeJareed) {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','سعر البيع','سعر الشراء'];
+    rows = filtered.map(i => [i.code, i.name, i.store, i.actual, i.sellPrice||0, i.buyPrice||0]);
+  } else {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق'];
+    rows = filtered.map(item => {
+      const counted = jareedHistory[item.code]?.counted || 0;
+      const diff = counted - item.actual;
+      const diffVal = diff * (item.buyPrice || 0);
+      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice||0, item.sellPrice||0, parseFloat(diffVal.toFixed(3))];
+    });
+  }
+
+  // بناء workbook بـ SheetJS
+  const wb = XLSX.utils.book_new();
+  const wsData = [[titleText], headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // عرض الأعمدة
+  ws['!cols'] = headers.map((h, i) => ({ wch: i === 1 ? 35 : i === 0 ? 18 : 14 }));
+
+  // دمج خلايا العنوان على كامل العرض
+  ws['!merges'] = [{ s: {r:0, c:0}, e: {r:0, c: headers.length-1} }];
+
+  // تنسيق العنوان
+  const titleCell = ws['A1'];
+  if (titleCell) {
+    titleCell.s = {
+      font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '1A2340' } },
+      alignment: { horizontal: 'center', vertical: 'center', readingOrder: 2 }
+    };
+  }
+
+  // تنسيق صف العناوين
+  headers.forEach((h, i) => {
+    const cellAddr = XLSX.utils.encode_cell({ r: 1, c: i });
+    if (ws[cellAddr]) {
+      ws[cellAddr].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '2451C8' } },
+        alignment: { horizontal: 'center', readingOrder: 2 }
+      };
+    }
+  });
+
+  // تنسيق صفوف البيانات - تبادل ألوان
+  rows.forEach((row, ri) => {
+    row.forEach((val, ci) => {
+      const cellAddr = XLSX.utils.encode_cell({ r: ri + 2, c: ci });
+      if (ws[cellAddr]) {
+        ws[cellAddr].s = {
+          alignment: { horizontal: ci === 1 ? 'right' : 'center', readingOrder: 2 },
+          fill: { fgColor: { rgb: ri % 2 === 0 ? 'EEF1F8' : 'FFFFFF' } }
+        };
+      }
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, titles[type].substring(0, 31));
   const dateStr = new Date().toLocaleDateString('ar-KW').replace(/\//g, '-');
-  a.download = filename + '_' + dateStr + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-
+  XLSX.writeFile(wb, filename + '_' + dateStr + '.xlsx', { bookType: 'xlsx', cellStyles: true });
   showExportToast('✅ تم تصدير ' + filtered.length + ' صنف بنجاح!');
 }
 
