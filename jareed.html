@@ -623,7 +623,7 @@ body {
 
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <div class="drop-icon">📂</div>
-        <div class="drop-text">اضغط لاختيار ملف Excel</div>
+        <div class="drop-text">اضغط لاختيار ملف Excel (.xlsx)</div>
         <div class="drop-sub">.xlsx أو .xls</div>
         <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
       </div>
@@ -1028,7 +1028,15 @@ async function importData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-      const dataRows = rows.slice(1).filter(r => r[0] || r[1]);
+      // تخطي سطر العنوان وسطر الأعمدة (أول سطرين)
+      // أو سطر واحد فقط إذا ما في عنوان
+      let startRow = 1;
+      if (rows.length > 1) {
+        // إذا الصف الأول ما يشبه بيانات (عنوان مدموج أو نص فقط) نتخطى سطرين
+        const firstRowCells = rows[0].filter(c => c !== '').length;
+        if (firstRowCells <= 2) startRow = 2;
+      }
+      const dataRows = rows.slice(startRow).filter(r => r[0] || r[1]);
       const toUpsert = [];
       let newCount = 0, dupCount = 0;
 
@@ -1074,16 +1082,30 @@ async function importData() {
 function downloadTemplate() {
   const headers = ['كود الصنف', 'اسم الصنف', 'المخزن', 'الكمية الدفترية', 'سعر البيع', 'سعر الشراء'];
   const rows = [
-    ['001-101', 'ماء شملان', '1', '10.00', '200.00', '150.50'],
-    ['001-102', 'عصير برتقال', '1', '25.00', '350.00', '280.00'],
+    ['001-101', 'ماء شملان', '1', 10.00, 200.00, 150.50],
+    ['001-102', 'عصير برتقال', '1', 25.00, 350.00, 280.00],
   ];
-  const bom = '\uFEFF';
-  const csv = bom + [headers, ...rows].map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'نموذج_الاصناف.csv';
-  a.click(); URL.revokeObjectURL(url);
+
+  const wb = XLSX.utils.book_new();
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  ws['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 12 }, { wch: 12 }];
+
+  // تنسيق رؤوس الأعمدة
+  headers.forEach((h, i) => {
+    const cell = XLSX.utils.encode_cell({ r: 0, c: i });
+    if (ws[cell]) {
+      ws[cell].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1A2340' } },
+        alignment: { horizontal: 'center', readingOrder: 2 }
+      };
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, 'الاصناف');
+  XLSX.writeFile(wb, 'نموذج_الاصناف.xlsx', { bookType: 'xlsx', cellStyles: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
