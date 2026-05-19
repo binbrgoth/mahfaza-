@@ -238,6 +238,16 @@ body {
 .asnaf-empty-sub { font-size:13px; color:var(--gray); }
 .btn-go-import { margin-top:8px; padding:12px 24px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
 
+.item-inline-row { display:flex; align-items:center; padding:6px 10px 8px; gap:0; overflow-x:auto; border-top:1px solid #f0f4ff; }
+.item-inline-field { flex:1; min-width:0; text-align:center; padding:0 4px; border-left:1px solid #f0f4ff; }
+.item-inline-field:last-child { border-left:none; }
+.item-inline-lbl { font-size:9px; color:var(--gray); font-weight:700; white-space:nowrap; }
+.item-inline-val { font-size:11px; font-weight:900; color:var(--dark); white-space:nowrap; }
+.item-inline-val.accent { color:var(--blue2); }
+.item-inline-val.green { color:#0e7c6b; }
+.item-inline-val.pos { color:#0e7c6b; }
+.item-inline-val.neg { color:#e53935; }
+.item-inline-val.zero { color:var(--gray); }
 .item-row-card { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.07); overflow:hidden; cursor:pointer; transition:transform 0.15s; }
 .item-row-card:active { transform:scale(0.98); }
 .item-row-card-header { padding:8px 12px 6px; border-bottom:1px solid #f5f7ff; display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -1371,15 +1381,13 @@ function renderAsnaf() {
           <div class="item-row-name">${item.name}</div>
           <div class="item-row-code">${item.code}</div>
         </div>
-        <div class="item-row-body">
-          <div class="item-row-field"><div class="item-row-lbl">البيع</div><div class="item-row-val accent">${(item.sellPrice||0).toFixed(3)}</div></div>
-          <div class="item-row-field"><div class="item-row-lbl">التكلفة</div><div class="item-row-val">${(item.buyPrice||0).toFixed(3)}</div></div>
-          <div class="item-row-field"><div class="item-row-lbl">الدفتري</div><div class="item-row-val">${item.actual}</div></div>
-          <div class="item-row-field"><div class="item-row-lbl">المجرود</div><div class="item-row-val green">${counted}</div></div>
-        </div>
-        <div class="item-row-footer">
-          <div><div class="item-row-diff-lbl">فرق الجرد</div><div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div></div>
-          <div><div class="item-row-diff-lbl">قيمة الفرق</div><div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div></div>
+        <div class="item-inline-row">
+          <div class="item-inline-field"><div class="item-inline-lbl">البيع</div><div class="item-inline-val accent">${(item.sellPrice||0).toFixed(3)}</div></div>
+          <div class="item-inline-field"><div class="item-inline-lbl">التكلفة</div><div class="item-inline-val">${(item.buyPrice||0).toFixed(3)}</div></div>
+          <div class="item-inline-field"><div class="item-inline-lbl">الدفتري</div><div class="item-inline-val">${item.actual}</div></div>
+          <div class="item-inline-field"><div class="item-inline-lbl">المجرود</div><div class="item-inline-val green">${counted}</div></div>
+          <div class="item-inline-field"><div class="item-inline-lbl">فرق الجرد</div><div class="item-inline-val ${diffClass}">${diffSign}${diff}</div></div>
+          <div class="item-inline-field"><div class="item-inline-lbl">قيمة الفرق</div><div class="item-inline-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)}</div></div>
         </div>
       </div>`;
   }).join('');
