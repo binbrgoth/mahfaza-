@@ -969,8 +969,10 @@ function goSlide(n) {}
 
 // NAVIGATION
 function goTo(name) {
+  const target = document.getElementById('screen-' + name);
+  if (!target) { console.error('Screen not found: screen-' + name); return; }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
+  target.classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'اصناف') {
     loadAllData().then(() => renderAsnaf());
@@ -979,8 +981,10 @@ function goTo(name) {
 
 function goHome() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-home').classList.add('active');
+  const home = document.getElementById('screen-home');
+  if (home) home.classList.add('active');
   window.scrollTo(0, 0);
+  stopCamera();
 }
 
 // ===== IMPORT PAGE =====
@@ -1156,16 +1160,18 @@ async function startCamera() {
 }
 
 function stopCamera() {
-  if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(t => t.stop());
-    cameraStream = null;
-  }
-  cameraActive = false;
-  document.getElementById('camWrap').style.display = 'none';
-  const btn = document.getElementById('btnCam');
-  btn.innerHTML = '<span>📷</span> فتح الكاميرا';
-  btn.classList.remove('active');
+  try {
+    if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    cameraActive = false;
+    const camWrap = document.getElementById('camWrap');
+    if (camWrap) camWrap.style.display = 'none';
+    const btn = document.getElementById('btnCam');
+    if (btn) { btn.innerHTML = '<span>📷</span> فتح الكاميرا'; btn.classList.remove('active'); }
+  } catch(e) { console.log('stopCamera error:', e); }
 }
 
 function searchBarcode() {
