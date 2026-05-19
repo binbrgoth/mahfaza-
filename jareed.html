@@ -174,6 +174,45 @@ body {
 .coming-title { font-size: 20px; font-weight: 900; color: var(--dark); }
 .coming-sub { font-size: 14px; color: var(--gray); }
 
+/* IDARA PAGE */
+.idara-grid { padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.idara-card { border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 10px; cursor: pointer; transition: transform 0.15s; position: relative; overflow: hidden; min-height: 110px; border: none; outline: none; -webkit-tap-highlight-color: transparent; }
+.idara-card:active { transform: scale(0.95); }
+.idara-card::before { content: ''; position: absolute; top: -40%; right: -40%; width: 80%; height: 80%; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); pointer-events: none; }
+.idara-wide { grid-column: 1 / -1; flex-direction: row; gap: 14px; min-height: 80px; padding: 20px 28px; justify-content: center; }
+.idara-blue { background: linear-gradient(145deg, #3060e8, #2451c8); box-shadow: 0 4px 16px rgba(48,96,232,0.35); }
+.idara-green { background: linear-gradient(145deg, #0e9c87, #0e7c6b); box-shadow: 0 4px 16px rgba(14,124,107,0.35); }
+.idara-purple { background: linear-gradient(145deg, #6b4fe0, #5b3fd4); box-shadow: 0 4px 16px rgba(91,63,212,0.35); }
+.idara-red { background: linear-gradient(145deg, #f05454, #c62828); box-shadow: 0 4px 16px rgba(198,40,40,0.35); }
+.idara-dark { background: linear-gradient(145deg, #2a3550, #1a2340); box-shadow: 0 4px 16px rgba(26,35,64,0.35); }
+.idara-icon { font-size: 30px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.idara-wide .idara-icon { margin-bottom: 0; font-size: 32px; }
+.idara-label { font-size: 13px; font-weight: 800; color: white; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.idara-wide .idara-label { font-size: 16px; }
+.idara-count-badge { background: rgba(255,255,255,0.2); color: white; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
+
+/* STATS */
+.stats-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 90px; }
+.stats-store-name { font-size: 18px; font-weight: 900; color: var(--dark); text-align: center; padding: 8px 0; }
+.stats-cards { display: flex; flex-direction: column; gap: 12px; }
+.stats-card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 6px; }
+.green-card { border-right: 4px solid #0e7c6b; }
+.red-card { border-right: 4px solid #e53935; }
+.stats-card-icon { font-size: 24px; }
+.stats-card-lbl { font-size: 12px; color: var(--gray); font-weight: 700; }
+.stats-card-val { font-size: 24px; font-weight: 900; color: var(--dark); }
+.green-card .stats-card-val { color: #0e7c6b; }
+.red-card .stats-card-val { color: #e53935; }
+.stats-card-sub { font-size: 12px; font-weight: 700; color: var(--gray); }
+.stats-summary { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 0; }
+.stats-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f4ff; }
+.stats-summary-row:last-child { border-bottom: none; }
+.stats-summary-lbl { font-size: 13px; color: var(--gray); font-weight: 700; }
+.stats-summary-val { font-size: 16px; font-weight: 900; color: var(--dark); }
+.stats-summary-val.green { color: #0e7c6b; }
+.stats-summary-val.red { color: #e53935; }
+.stats-summary-val.blue { color: var(--blue2); }
+
 /* ASNAF PAGE */
 .asnaf-header-icons { display:flex; gap:6px; margin-right:auto; }
 .icon-btn { background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; width:34px; height:34px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
@@ -670,12 +709,103 @@ body {
     <button class="back-btn" onclick="goHome()">→</button>
     <div class="page-title">إدارة الجرد</div>
   </div>
-  <div class="coming-soon">
-    <div class="coming-icon">⚙️</div>
-    <div class="coming-title">إدارة الجرد</div>
-    <div class="coming-sub">سيتم بناء هذا القسم قريباً</div>
+
+  <!-- شبكة الأزرار -->
+  <div class="idara-grid">
+    <div class="idara-card idara-blue" onclick="showIdaraSection('غير-مجرودة')">
+      <div class="idara-icon">🏪</div>
+      <div class="idara-label">الاصناف الغير مجرودة</div>
+    </div>
+    <div class="idara-card idara-green" onclick="showIdaraSection('مطابقة')">
+      <div class="idara-icon">✅</div>
+      <div class="idara-label">الاصناف المطابقة</div>
+    </div>
+    <div class="idara-card idara-purple" onclick="showIdaraSection('زائدة')">
+      <div class="idara-icon">➕</div>
+      <div class="idara-label">الاصناف الزائدة</div>
+    </div>
+    <div class="idara-card idara-red" onclick="showIdaraSection('ناقصة')">
+      <div class="idara-icon">➖</div>
+      <div class="idara-label">الاصناف الناقصة</div>
+    </div>
+    <div class="idara-card idara-dark idara-wide" onclick="showIdaraSection('احصائية')">
+      <div class="idara-icon">📊</div>
+      <div class="idara-label">الاحصائية</div>
+    </div>
   </div>
+
+  <div class="spacer"></div>
 </div>
+
+<!-- صفحة النتائج -->
+<div class="screen" id="screen-idara-result">
+  <div class="page-header">
+    <button class="back-btn" onclick="goTo('ادارة')">→</button>
+    <div class="page-title" id="idaraResultTitle">—</div>
+    <div class="idara-count-badge" id="idaraCountBadge"></div>
+  </div>
+
+  <!-- احصائية -->
+  <div id="statsSection" style="display:none">
+    <div class="stats-body">
+      <div class="stats-store-name" id="statsStoreName">المخزن 1</div>
+
+      <div class="stats-cards">
+        <div class="stats-card green-card">
+          <div class="stats-card-icon">📈</div>
+          <div class="stats-card-lbl">قيمة البضاعة الزائدة</div>
+          <div class="stats-card-val" id="statsPlus">0.000 د.ك</div>
+        </div>
+        <div class="stats-card red-card">
+          <div class="stats-card-icon">📉</div>
+          <div class="stats-card-lbl">قيمة البضاعة الناقصة</div>
+          <div class="stats-card-val" id="statsMinus">0.000 د.ك</div>
+        </div>
+        <div class="stats-card" id="statsDiffCard">
+          <div class="stats-card-icon" id="statsDiffIcon">⚖️</div>
+          <div class="stats-card-lbl">الفارق الإجمالي</div>
+          <div class="stats-card-val" id="statsDiff">0.000 د.ك</div>
+          <div class="stats-card-sub" id="statsDiffLabel">متوازن</div>
+        </div>
+      </div>
+
+      <div class="stats-summary">
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">إجمالي الأصناف</span>
+          <span class="stats-summary-val" id="stTotal">0</span>
+        </div>
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">مجرودة</span>
+          <span class="stats-summary-val" id="stCounted">0</span>
+        </div>
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">غير مجرودة</span>
+          <span class="stats-summary-val red" id="stNotCounted">0</span>
+        </div>
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">مطابقة</span>
+          <span class="stats-summary-val green" id="stMatch">0</span>
+        </div>
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">زائدة</span>
+          <span class="stats-summary-val blue" id="stPlus">0</span>
+        </div>
+        <div class="stats-summary-row">
+          <span class="stats-summary-lbl">ناقصة</span>
+          <span class="stats-summary-val red" id="stMinus">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- قائمة الأصناف -->
+  <div id="idaraItemsList" style="display:none">
+    <div class="asnaf-list" id="idaraList"></div>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
@@ -1274,6 +1404,138 @@ document.getElementById('addItemModal').addEventListener('click', function(e) {
 });
 
 // تحديث الأصناف عند فتح الصفحة - مدمج في goTo الأصلية
+
+
+// ===== IDARA PAGE =====
+function showIdaraSection(type) {
+  const items = Object.values(itemsDB);
+  let filtered = [];
+  let title = '';
+
+  items.forEach(item => {
+    const counted = jareedHistory[item.code]?.counted || 0;
+    const diff = counted - item.actual;
+
+    if (type === 'غير-مجرودة' && counted === 0) filtered.push(item);
+    else if (type === 'مطابقة' && counted > 0 && diff === 0) filtered.push(item);
+    else if (type === 'زائدة' && diff > 0) filtered.push(item);
+    else if (type === 'ناقصة' && diff < 0) filtered.push(item);
+  });
+
+  if (type === 'احصائية') {
+    renderStats(items);
+    return;
+  }
+
+  const titles = {
+    'غير-مجرودة': 'الاصناف الغير مجرودة',
+    'مطابقة': 'الاصناف المطابقة',
+    'زائدة': 'الاصناف الزائدة',
+    'ناقصة': 'الاصناف الناقصة',
+  };
+  title = titles[type] || type;
+
+  document.getElementById('idaraResultTitle').textContent = title;
+  document.getElementById('idaraCountBadge').textContent = filtered.length;
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('idaraItemsList').style.display = 'block';
+
+  const list = document.getElementById('idaraList');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="asnaf-empty"><div class="asnaf-empty-icon">✅</div><div class="asnaf-empty-title">لا توجد أصناف</div></div>';
+  } else {
+    list.innerHTML = filtered.map(item => {
+      const counted = jareedHistory[item.code]?.counted || 0;
+      const diff = counted - item.actual;
+      const diffVal = diff * (item.buyPrice || 0);
+      const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero';
+      const diffSign = diff > 0 ? '+' : '';
+      const diffValSign = diffVal > 0 ? '+' : '';
+      return `
+      <div class="item-row-card">
+        <div class="item-row-card-header">
+          <div class="item-row-name">${item.name}</div>
+          <div class="item-row-code">${item.code}</div>
+        </div>
+        <div class="item-row-body">
+          <div class="item-row-line">
+            <div class="item-row-field">
+              <div class="item-row-lbl">الكمية الدفترية</div>
+              <div class="item-row-val">${item.actual}</div>
+            </div>
+            <div class="item-row-field">
+              <div class="item-row-lbl">الكمية المجرودة</div>
+              <div class="item-row-val green">${counted}</div>
+            </div>
+          </div>
+        </div>
+        <div class="item-row-footer">
+          <div>
+            <div class="item-row-diff-lbl">فرق الجرد</div>
+            <div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div>
+          </div>
+          <div>
+            <div class="item-row-diff-lbl">قيمة الفرق</div>
+            <div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  goToRaw('idara-result');
+}
+
+function renderStats(items) {
+  document.getElementById('idaraResultTitle').textContent = 'الاحصائية';
+  document.getElementById('idaraCountBadge').textContent = '';
+  document.getElementById('statsSection').style.display = 'block';
+  document.getElementById('idaraItemsList').style.display = 'none';
+
+  let totalPlus = 0, totalMinus = 0;
+  let countCounted = 0, countMatch = 0, countPlus = 0, countMinus = 0, countNot = 0;
+
+  items.forEach(item => {
+    const counted = jareedHistory[item.code]?.counted || 0;
+    const diff = counted - item.actual;
+    const val = diff * (item.buyPrice || 0);
+
+    if (counted === 0) countNot++;
+    else countCounted++;
+
+    if (counted > 0 && diff === 0) countMatch++;
+    if (diff > 0) { countPlus++; totalPlus += val; }
+    if (diff < 0) { countMinus++; totalMinus += Math.abs(val); }
+  });
+
+  const net = totalPlus - totalMinus;
+
+  // اسم المخزن
+  const stores = [...new Set(items.map(i => i.store))];
+  document.getElementById('statsStoreName').textContent = stores.length > 0 ? 'مخزن ' + stores.join(' / ') : 'المخزن';
+
+  document.getElementById('statsPlus').textContent = totalPlus.toFixed(3) + ' د.ك';
+  document.getElementById('statsMinus').textContent = totalMinus.toFixed(3) + ' د.ك';
+  document.getElementById('statsDiff').textContent = (net >= 0 ? '+' : '') + net.toFixed(3) + ' د.ك';
+  document.getElementById('statsDiff').style.color = net > 0 ? '#0e7c6b' : net < 0 ? '#e53935' : '#6b7a99';
+  document.getElementById('statsDiffLabel').textContent = net > 0 ? '📈 فائض' : net < 0 ? '📉 عجز' : '⚖️ متوازن';
+  document.getElementById('statsDiffCard').style.borderRight = '4px solid ' + (net > 0 ? '#0e7c6b' : net < 0 ? '#e53935' : '#c0cadf');
+
+  document.getElementById('stTotal').textContent = items.length;
+  document.getElementById('stCounted').textContent = countCounted;
+  document.getElementById('stNotCounted').textContent = countNot;
+  document.getElementById('stMatch').textContent = countMatch;
+  document.getElementById('stPlus').textContent = countPlus;
+  document.getElementById('stMinus').textContent = countMinus;
+
+  goToRaw('idara-result');
+}
+
+function goToRaw(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
 
 
 </script>
