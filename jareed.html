@@ -231,30 +231,30 @@ body {
 .asnaf-stat-val.green { color:#0e7c6b; }
 .asnaf-stat-val.red { color:#e53935; }
 .asnaf-stat-lbl { font-size:10px; color:var(--gray); font-weight:700; margin-top:2px; }
-.asnaf-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; padding-bottom:90px; }
+.asnaf-list { padding:0 12px; display:flex; flex-direction:column; gap:8px; padding-bottom:90px; }
 .asnaf-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; gap:12px; text-align:center; }
 .asnaf-empty-icon { font-size:56px; }
 .asnaf-empty-title { font-size:18px; font-weight:900; color:var(--dark); }
 .asnaf-empty-sub { font-size:13px; color:var(--gray); }
 .btn-go-import { margin-top:8px; padding:12px 24px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
 
-.item-row-card { background:white; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,0.07); overflow:hidden; cursor:pointer; transition:transform 0.15s; }
+.item-row-card { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.07); overflow:hidden; cursor:pointer; transition:transform 0.15s; }
 .item-row-card:active { transform:scale(0.98); }
-.item-row-card-header { padding:13px 16px 8px; border-bottom:1px solid #f5f7ff; }
-.item-row-name { font-size:15px; font-weight:900; color:var(--dark); }
-.item-row-code { font-size:11px; color:var(--gray); font-weight:700; margin-top:2px; }
-.item-row-body { padding:10px 16px; display:flex; flex-direction:column; gap:6px; }
-.item-row-line { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.item-row-card-header { padding:8px 12px 6px; border-bottom:1px solid #f5f7ff; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.item-row-name { font-size:13px; font-weight:900; color:var(--dark); flex:1; }
+.item-row-code { font-size:11px; color:var(--gray); font-weight:700; white-space:nowrap; }
+.item-row-body { padding:6px 12px; display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; }
+.item-row-line { display:contents; }
 .item-row-field { }
-.item-row-lbl { font-size:10px; color:var(--gray); font-weight:700; }
-.item-row-val { font-size:13px; font-weight:800; color:var(--dark); }
+.item-row-lbl { font-size:9px; color:var(--gray); font-weight:700; }
+.item-row-val { font-size:12px; font-weight:800; color:var(--dark); }
 .item-row-val.accent { color:var(--blue2); }
 .item-row-val.green { color:#0e7c6b; }
 .item-row-val.red { color:#e53935; }
 .item-row-val.orange { color:#e07c00; }
-.item-row-footer { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px 16px 12px; background:#f8faff; }
-.item-row-diff-lbl { font-size:10px; color:var(--gray); font-weight:700; }
-.item-row-diff-val { font-size:14px; font-weight:900; }
+.item-row-footer { display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; padding:5px 12px 8px; background:#f8faff; }
+.item-row-diff-lbl { font-size:9px; color:var(--gray); font-weight:700; }
+.item-row-diff-val { font-size:12px; font-weight:900; }
 .item-row-diff-val.pos { color:#0e7c6b; }
 .item-row-diff-val.neg { color:#e53935; }
 .item-row-diff-val.zero { color:var(--gray); }
@@ -1360,13 +1360,12 @@ function renderAsnaf() {
     const diffSign = diff > 0 ? '+' : '';
     const diffValSign = diffVal > 0 ? '+' : '';
     return `
-    <div class="item-row-card" onclick="openItemDetail('${item.code}')">
-      <div class="item-row-card-header">
-        <div class="item-row-name">${item.name}</div>
-        <div class="item-row-code">${item.code}</div>
-      </div>
-      <div class="item-row-body">
-        <div class="item-row-line">
+        <div class="item-row-card" onclick="openItemDetail('${item.code}')">
+        <div class="item-row-card-header">
+          <div class="item-row-name">${item.name}</div>
+          <div class="item-row-code">${item.code}</div>
+        </div>
+        <div class="item-row-body">
           <div class="item-row-field">
             <div class="item-row-lbl">سعر البيع</div>
             <div class="item-row-val accent">${(item.sellPrice||0).toFixed(3)}</div>
@@ -1375,8 +1374,6 @@ function renderAsnaf() {
             <div class="item-row-lbl">سعر الشراء</div>
             <div class="item-row-val">${(item.buyPrice||0).toFixed(3)}</div>
           </div>
-        </div>
-        <div class="item-row-line">
           <div class="item-row-field">
             <div class="item-row-lbl">الكمية الدفترية</div>
             <div class="item-row-val">${item.actual}</div>
@@ -1386,18 +1383,17 @@ function renderAsnaf() {
             <div class="item-row-val green">${counted}</div>
           </div>
         </div>
-      </div>
-      <div class="item-row-footer">
-        <div>
-          <div class="item-row-diff-lbl">فرق الجرد</div>
-          <div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div>
+        <div class="item-row-footer">
+          <div>
+            <div class="item-row-diff-lbl">فرق الجرد</div>
+            <div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div>
+          </div>
+          <div>
+            <div class="item-row-diff-lbl">قيمة الفرق</div>
+            <div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div>
+          </div>
         </div>
-        <div>
-          <div class="item-row-diff-lbl">قيمة الفرق</div>
-          <div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div>
-        </div>
       </div>
-    </div>`;
   }).join('');
 }
 
