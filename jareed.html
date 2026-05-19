@@ -753,6 +753,7 @@ function goTo(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
+  if (name === 'اصناف') setTimeout(renderAsnaf, 50);
 }
 
 function goHome() {
@@ -913,6 +914,7 @@ async function startCamera() {
 }
 
 function stopCamera() {
+  if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
   if (cameraStream) {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
@@ -1056,15 +1058,7 @@ async function startBarcodeScanner() {
   }
 }
 
-// Override stopCamera to also stop ZXing
-const _origStopCamera = stopCamera;
-function stopCamera() {
-  if (codeReader) {
-    try { codeReader.reset(); } catch(e) {}
-    codeReader = null;
-  }
-  _origStopCamera();
-}
+// ZXing cleanup handled inside stopCamera directly
 
 
 // ===== ASNAF PAGE =====
@@ -1207,12 +1201,7 @@ document.getElementById('addItemModal').addEventListener('click', function(e) {
   if (e.target === this) closeAddItem();
 });
 
-// تحديث الأصناف عند فتح الصفحة
-const _origGoTo = goTo;
-function goTo(name) {
-  _origGoTo(name);
-  if (name === 'اصناف') setTimeout(renderAsnaf, 50);
-}
+// تحديث الأصناف عند فتح الصفحة - مدمج في goTo الأصلية
 
 
 </script>
