@@ -174,6 +174,11 @@ body {
 .coming-title { font-size: 20px; font-weight: 900; color: var(--dark); }
 .coming-sub { font-size: 14px; color: var(--gray); }
 
+/* BAYYANAT PAGE */
+.idara-blue2 { background: linear-gradient(145deg, #0288d1, #01579b); box-shadow: 0 4px 16px rgba(2,136,209,0.35); }
+.export-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1a2340; color: white; padding: 14px 24px; border-radius: 50px; display: flex; align-items: center; gap: 10px; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 500; animation: fadeUp 0.3s ease; }
+.export-toast-icon { font-size: 20px; }
+
 /* IDARA PAGE */
 .idara-grid { padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .idara-card { border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 10px; cursor: pointer; transition: transform 0.15s; position: relative; overflow: hidden; min-height: 110px; border: none; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -697,12 +702,43 @@ body {
     <button class="back-btn" onclick="goHome()">→</button>
     <div class="page-title">إدارة البيانات</div>
   </div>
-  <div class="coming-soon">
-    <div class="coming-icon">🗂️</div>
-    <div class="coming-title">إدارة البيانات</div>
-    <div class="coming-sub">سيتم بناء هذا القسم قريباً</div>
+
+  <div class="idara-grid">
+    <div class="idara-card idara-blue" onclick="exportData('all')">
+      <div class="idara-icon">📦</div>
+      <div class="idara-label">تصدير البيانات بالكامل</div>
+    </div>
+    <div class="idara-card idara-green" onclick="exportData('match')">
+      <div class="idara-icon">✅</div>
+      <div class="idara-label">الاصناف المطابقة</div>
+    </div>
+    <div class="idara-card idara-purple" onclick="exportData('plus')">
+      <div class="idara-icon">➕</div>
+      <div class="idara-label">الاصناف الزائدة</div>
+    </div>
+    <div class="idara-card idara-red" onclick="exportData('minus')">
+      <div class="idara-icon">➖</div>
+      <div class="idara-label">الاصناف الناقصة</div>
+    </div>
+    <div class="idara-card idara-blue2" onclick="exportData('notcounted')">
+      <div class="idara-icon">🏪</div>
+      <div class="idara-label">الاصناف الغير مجرودة</div>
+    </div>
+    <div class="idara-card idara-dark" onclick="exportData('report')">
+      <div class="idara-icon">📋</div>
+      <div class="idara-label">تقرير تفصيلي</div>
+    </div>
   </div>
+
+  <!-- مؤشر التصدير -->
+  <div class="export-toast" id="exportToast" style="display:none">
+    <div class="export-toast-icon">✅</div>
+    <div class="export-toast-text" id="exportToastText">تم التصدير بنجاح!</div>
+  </div>
+
+  <div class="spacer"></div>
 </div>
+
 
 <div class="screen" id="screen-ادارة">
   <div class="page-header">
@@ -1535,6 +1571,78 @@ function goToRaw(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
+}
+
+
+// ===== EXPORT DATA =====
+function exportData(type) {
+  const items = Object.values(itemsDB);
+  let filtered = [];
+  let filename = '';
+  let includeJareed = true;
+
+  items.forEach(item => {
+    const counted = jareedHistory[item.code]?.counted || 0;
+    const diff = counted - item.actual;
+
+    if (type === 'all') { filtered.push(item); filename = 'جميع_الاصناف'; }
+    else if (type === 'match' && counted > 0 && diff === 0) { filtered.push(item); filename = 'الاصناف_المطابقة'; }
+    else if (type === 'plus' && diff > 0) { filtered.push(item); filename = 'الاصناف_الزائدة'; }
+    else if (type === 'minus' && diff < 0) { filtered.push(item); filename = 'الاصناف_الناقصة'; }
+    else if (type === 'notcounted' && counted === 0) { filtered.push(item); filename = 'الاصناف_الغير_مجرودة'; includeJareed = false; }
+    else if (type === 'report') { filtered.push(item); filename = 'تقرير_تفصيلي'; }
+  });
+
+  if (filtered.length === 0) {
+    showExportToast('لا توجد بيانات للتصدير');
+    return;
+  }
+
+  // بناء الصفوف
+  let headers, rows;
+
+  if (type === 'report') {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق','الحالة'];
+    rows = filtered.map(item => {
+      const counted = jareedHistory[item.code]?.counted || 0;
+      const diff = counted - item.actual;
+      const diffVal = diff * (item.buyPrice || 0);
+      const status = diff === 0 ? (counted === 0 ? 'غير مجرود' : 'مطابق') : diff > 0 ? 'زيادة' : 'نقص';
+      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice || 0, item.sellPrice || 0, diffVal.toFixed(3), status];
+    });
+  } else if (!includeJareed) {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','سعر البيع','سعر الشراء'];
+    rows = filtered.map(i => [i.code, i.name, i.store, i.actual, i.sellPrice || 0, i.buyPrice || 0]);
+  } else {
+    headers = ['كود الصنف','اسم الصنف','المخزن','الكمية الدفترية','الكمية المجرودة','الفرق','سعر الشراء','سعر البيع','قيمة الفرق'];
+    rows = filtered.map(item => {
+      const counted = jareedHistory[item.code]?.counted || 0;
+      const diff = counted - item.actual;
+      const diffVal = diff * (item.buyPrice || 0);
+      return [item.code, item.name, item.store, item.actual, counted, diff, item.buyPrice || 0, item.sellPrice || 0, diffVal.toFixed(3)];
+    });
+  }
+
+  // إنشاء Excel
+  const bom = '\uFEFF';
+  const csv = bom + [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toLocaleDateString('ar-KW').replace(/\//g, '-');
+  a.href = url;
+  a.download = filename + '_' + date + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showExportToast('✅ تم تصدير ' + filtered.length + ' صنف بنجاح!');
+}
+
+function showExportToast(msg) {
+  const toast = document.getElementById('exportToast');
+  document.getElementById('exportToastText').textContent = msg;
+  toast.style.display = 'flex';
+  setTimeout(() => toast.style.display = 'none', 3000);
 }
 
 
