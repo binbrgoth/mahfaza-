@@ -964,19 +964,8 @@ function showLoading(show) {
 window.addEventListener('load', loadAllData);
 
 
-// SLIDER
-let currentSlide = 0;
-const totalSlides = 4;
-
-function goSlide(n) {
-  document.getElementById('slide-' + currentSlide).classList.remove('active');
-  document.querySelectorAll('.dot')[currentSlide].classList.remove('active');
-  currentSlide = n;
-  document.getElementById('slide-' + currentSlide).classList.add('active');
-  document.querySelectorAll('.dot')[currentSlide].classList.add('active');
-}
-
-setInterval(() => goSlide((currentSlide + 1) % totalSlides), 3500);
+// SLIDER REMOVED - no-op
+function goSlide(n) {}
 
 // NAVIGATION
 function goTo(name) {
@@ -1332,9 +1321,7 @@ async function startBarcodeScanner() {
 let asnafSortAZ = false;
 
 function renderAsnaf() {
-  const db = JSON.parse(localStorage.getItem('itemsDB') || '{}');
-  const history = JSON.parse(localStorage.getItem('jareedHistory') || '{}');
-  const items = Object.values(db);
+  const items = Object.values(itemsDB);
   const search = (document.getElementById('asnafSearchInput')?.value || '').toLowerCase();
 
   let filtered = items.filter(i =>
@@ -1345,11 +1332,12 @@ function renderAsnaf() {
 
   const list = document.getElementById('asnafList');
   const empty = document.getElementById('asnafEmpty');
+  if (!list || !empty) return;
 
   // stats
   let okCount = 0, diffCount = 0;
   items.forEach(i => {
-    const counted = history[i.code]?.counted || 0;
+    const counted = jareedHistory[i.code]?.counted || 0;
     if (counted === i.actual) okCount++; else diffCount++;
   });
   document.getElementById('statTotal').textContent = items.length;
@@ -1365,7 +1353,7 @@ function renderAsnaf() {
   empty.style.display = 'none';
 
   list.innerHTML = filtered.map(item => {
-    const counted = history[item.code]?.counted || 0;
+    const counted = jareedHistory[item.code]?.counted || 0;
     const diff = counted - item.actual;
     const diffVal = diff * item.buyPrice;
     const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero';
