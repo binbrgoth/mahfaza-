@@ -937,6 +937,11 @@ async function loadAllData() {
     });
 
     showLoading(false);
+    // تحديث صفحة الأصناف إذا كانت مفتوحة
+    const asnafScreen = document.getElementById('screen-اصناف');
+    if (asnafScreen && asnafScreen.classList.contains('active')) {
+      renderAsnaf();
+    }
   } catch(e) {
     showLoading(false);
     console.error('خطأ في تحميل البيانات:', e);
@@ -978,7 +983,9 @@ function goTo(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
-  if (name === 'اصناف') setTimeout(renderAsnaf, 50);
+  if (name === 'اصناف') {
+    loadAllData().then(() => renderAsnaf());
+  }
 }
 
 function goHome() {
