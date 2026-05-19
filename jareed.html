@@ -1051,7 +1051,8 @@ async function importData() {
       let newCount = 0, dupCount = 0;
 
       dataRows.forEach(r => {
-        const code = String(r[0] || '').trim();
+        const rawCode = String(r[0] || '').trim();
+        const code = rawCode.padStart(6, '0');
         const name = String(r[1] || '').trim();
         const store = String(r[2] || '1').trim();
         const actual = parseFloat(r[3]) || 0;
