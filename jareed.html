@@ -1623,15 +1623,26 @@ function exportData(type) {
     });
   }
 
-  // إنشاء Excel
+  // إنشاء Excel مع عنوان القسم في أول سطر
+  const titles = {
+    'all': 'تصدير البيانات بالكامل',
+    'match': 'الاصناف المطابقة',
+    'plus': 'الاصناف الزائدة',
+    'minus': 'الاصناف الناقصة',
+    'notcounted': 'الاصناف الغير مجرودة',
+    'report': 'تقرير تفصيلي'
+  };
+  const date = new Date().toLocaleDateString('ar-KW');
+  const titleRow = `"${titles[type]} - تاريخ: ${date}"`;
   const bom = '\uFEFF';
-  const csv = bom + [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const csv = bom + [titleRow, headers.map(v => `"${v}"`).join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const date = new Date().toLocaleDateString('ar-KW').replace(/\//g, '-');
+
   a.href = url;
-  a.download = filename + '_' + date + '.csv';
+  const dateStr = new Date().toLocaleDateString('ar-KW').replace(/\//g, '-');
+  a.download = filename + '_' + dateStr + '.csv';
   a.click();
   URL.revokeObjectURL(url);
 
