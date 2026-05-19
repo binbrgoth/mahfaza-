@@ -174,6 +174,55 @@ body {
 .coming-title { font-size: 20px; font-weight: 900; color: var(--dark); }
 .coming-sub { font-size: 14px; color: var(--gray); }
 
+/* ASNAF PAGE */
+.asnaf-header-icons { display:flex; gap:6px; margin-right:auto; }
+.icon-btn { background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; width:34px; height:34px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.asnaf-search-bar { background:var(--dark); padding:0 16px 12px; }
+.asnaf-search-input { width:100%; padding:11px 16px; border-radius:12px; border:none; font-family:'Cairo',sans-serif; font-size:14px; font-weight:600; background:rgba(255,255,255,0.1); color:white; outline:none; }
+.asnaf-search-input::placeholder { color:rgba(255,255,255,0.4); }
+.asnaf-stats { display:flex; background:white; margin:12px 16px; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,0.07); overflow:hidden; }
+.asnaf-stat { flex:1; text-align:center; padding:12px 8px; border-left:1px solid #f0f4ff; }
+.asnaf-stat:last-child { border-left:none; }
+.asnaf-stat-val { font-size:22px; font-weight:900; color:var(--dark); }
+.asnaf-stat-val.green { color:#0e7c6b; }
+.asnaf-stat-val.red { color:#e53935; }
+.asnaf-stat-lbl { font-size:10px; color:var(--gray); font-weight:700; margin-top:2px; }
+.asnaf-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; padding-bottom:90px; }
+.asnaf-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; gap:12px; text-align:center; }
+.asnaf-empty-icon { font-size:56px; }
+.asnaf-empty-title { font-size:18px; font-weight:900; color:var(--dark); }
+.asnaf-empty-sub { font-size:13px; color:var(--gray); }
+.btn-go-import { margin-top:8px; padding:12px 24px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
+
+.item-row-card { background:white; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,0.07); overflow:hidden; cursor:pointer; transition:transform 0.15s; }
+.item-row-card:active { transform:scale(0.98); }
+.item-row-card-header { padding:13px 16px 8px; border-bottom:1px solid #f5f7ff; }
+.item-row-name { font-size:15px; font-weight:900; color:var(--dark); }
+.item-row-code { font-size:11px; color:var(--gray); font-weight:700; margin-top:2px; }
+.item-row-body { padding:10px 16px; display:flex; flex-direction:column; gap:6px; }
+.item-row-line { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.item-row-field { }
+.item-row-lbl { font-size:10px; color:var(--gray); font-weight:700; }
+.item-row-val { font-size:13px; font-weight:800; color:var(--dark); }
+.item-row-val.accent { color:var(--blue2); }
+.item-row-val.green { color:#0e7c6b; }
+.item-row-val.red { color:#e53935; }
+.item-row-val.orange { color:#e07c00; }
+.item-row-footer { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px 16px 12px; background:#f8faff; }
+.item-row-diff-lbl { font-size:10px; color:var(--gray); font-weight:700; }
+.item-row-diff-val { font-size:14px; font-weight:900; }
+.item-row-diff-val.pos { color:#0e7c6b; }
+.item-row-diff-val.neg { color:#e53935; }
+.item-row-diff-val.zero { color:var(--gray); }
+
+.btn-add-item { position:fixed; bottom:80px; right:50%; transform:translateX(50%); max-width:200px; width:calc(100% - 120px); padding:14px 20px; border-radius:50px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(36,81,200,0.4); display:flex; align-items:center; justify-content:center; gap:8px; z-index:50; }
+
+.add-field { display:flex; flex-direction:column; gap:6px; }
+.add-label { font-size:12px; font-weight:800; color:var(--dark); }
+.add-input { padding:12px 14px; border:2px solid #d0d8ec; border-radius:12px; font-family:'Cairo',sans-serif; font-size:14px; font-weight:700; color:var(--dark); outline:none; transition:border-color 0.2s; }
+.add-input:focus { border-color:var(--blue2); }
+.btn-save-add { width:100%; padding:15px; border-radius:14px; border:none; background:linear-gradient(135deg,var(--teal),#0e7c6b); color:white; font-family:'Cairo',sans-serif; font-size:15px; font-weight:900; cursor:pointer; margin-top:4px; }
+
 /* JAREED PAGE */
 .header-action-btn { background: rgba(255,255,255,0.15); border: none; color: white; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
 .scan-section { padding: 16px; }
@@ -339,13 +388,90 @@ body {
   <div class="page-header">
     <button class="back-btn" onclick="goHome()">→</button>
     <div class="page-title">الاصناف</div>
+    <div class="asnaf-header-icons">
+      <button class="icon-btn" onclick="toggleAsnafSearch()" title="بحث">🔍</button>
+      <button class="icon-btn" onclick="sortAsnaf()" title="ترتيب">🔤</button>
+    </div>
   </div>
-  <div class="coming-soon">
-    <div class="coming-icon">🏪</div>
-    <div class="coming-title">الاصناف</div>
-    <div class="coming-sub">سيتم بناء هذا القسم قريباً</div>
+
+  <!-- شريط البحث -->
+  <div class="asnaf-search-bar" id="asnafSearchBar" style="display:none">
+    <input type="text" id="asnafSearchInput" class="asnaf-search-input" placeholder="ابحث باسم الصنف أو الكود..." oninput="renderAsnaf()">
   </div>
+
+  <!-- إحصائية سريعة -->
+  <div class="asnaf-stats">
+    <div class="asnaf-stat">
+      <div class="asnaf-stat-val" id="statTotal">0</div>
+      <div class="asnaf-stat-lbl">إجمالي الأصناف</div>
+    </div>
+    <div class="asnaf-stat">
+      <div class="asnaf-stat-val green" id="statOk">0</div>
+      <div class="asnaf-stat-lbl">مطابق</div>
+    </div>
+    <div class="asnaf-stat">
+      <div class="asnaf-stat-val red" id="statDiff">0</div>
+      <div class="asnaf-stat-lbl">فروقات</div>
+    </div>
+  </div>
+
+  <!-- قائمة الأصناف -->
+  <div class="asnaf-list" id="asnafList">
+    <div class="asnaf-empty" id="asnafEmpty">
+      <div class="asnaf-empty-icon">📦</div>
+      <div class="asnaf-empty-title">لا توجد أصناف</div>
+      <div class="asnaf-empty-sub">قم باستيراد بيانات الأصناف أولاً</div>
+      <button class="btn-go-import" onclick="goTo('استيراد')">استيراد بيانات</button>
+    </div>
+  </div>
+
+  <!-- زر إضافة صنف -->
+  <button class="btn-add-item" onclick="openAddItem()">
+    <span>+</span> إضافة صنف
+  </button>
+
+  <!-- مودال إضافة صنف -->
+  <div class="modal-overlay" id="addItemModal">
+    <div class="modal-box" style="border-radius:20px; margin:20px; max-height:85vh; overflow-y:auto;">
+      <div class="modal-head">
+        <div class="modal-title">➕ إضافة صنف جديد</div>
+        <button class="modal-close" onclick="closeAddItem()">✕</button>
+      </div>
+      <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div class="add-field">
+          <label class="add-label">كود الصنف *</label>
+          <input type="text" id="addCode" class="add-input" placeholder="مثال: 001-101">
+        </div>
+        <div class="add-field">
+          <label class="add-label">اسم الصنف *</label>
+          <input type="text" id="addName" class="add-input" placeholder="اسم الصنف">
+        </div>
+        <div class="add-field">
+          <label class="add-label">المخزن</label>
+          <input type="text" id="addStore" class="add-input" placeholder="1">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="add-field">
+            <label class="add-label">سعر البيع</label>
+            <input type="number" id="addSell" class="add-input" placeholder="0.000">
+          </div>
+          <div class="add-field">
+            <label class="add-label">سعر الشراء</label>
+            <input type="number" id="addBuy" class="add-input" placeholder="0.000">
+          </div>
+        </div>
+        <div class="add-field">
+          <label class="add-label">الكمية الدفترية</label>
+          <input type="number" id="addActual" class="add-input" placeholder="0">
+        </div>
+        <button class="btn-save-add" onclick="saveNewItem()">💾 حفظ الصنف</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
 </div>
+
 
 <div class="screen" id="screen-جرد">
   <div class="page-header">
@@ -938,6 +1064,154 @@ function stopCamera() {
     codeReader = null;
   }
   _origStopCamera();
+}
+
+
+// ===== ASNAF PAGE =====
+let asnafSortAZ = false;
+
+function renderAsnaf() {
+  const db = JSON.parse(localStorage.getItem('itemsDB') || '{}');
+  const history = JSON.parse(localStorage.getItem('jareedHistory') || '{}');
+  const items = Object.values(db);
+  const search = (document.getElementById('asnafSearchInput')?.value || '').toLowerCase();
+
+  let filtered = items.filter(i =>
+    !search || i.name.toLowerCase().includes(search) || i.code.toLowerCase().includes(search)
+  );
+
+  if (asnafSortAZ) filtered.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+  const list = document.getElementById('asnafList');
+  const empty = document.getElementById('asnafEmpty');
+
+  // stats
+  let okCount = 0, diffCount = 0;
+  items.forEach(i => {
+    const counted = history[i.code]?.counted || 0;
+    if (counted === i.actual) okCount++; else diffCount++;
+  });
+  document.getElementById('statTotal').textContent = items.length;
+  document.getElementById('statOk').textContent = okCount;
+  document.getElementById('statDiff').textContent = diffCount;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = filtered.map(item => {
+    const counted = history[item.code]?.counted || 0;
+    const diff = counted - item.actual;
+    const diffVal = diff * item.buyPrice;
+    const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero';
+    const diffSign = diff > 0 ? '+' : '';
+    const diffValSign = diffVal > 0 ? '+' : '';
+    return `
+    <div class="item-row-card" onclick="openItemDetail('${item.code}')">
+      <div class="item-row-card-header">
+        <div class="item-row-name">${item.name}</div>
+        <div class="item-row-code">${item.code}</div>
+      </div>
+      <div class="item-row-body">
+        <div class="item-row-line">
+          <div class="item-row-field">
+            <div class="item-row-lbl">سعر البيع</div>
+            <div class="item-row-val accent">${(item.sellPrice||0).toFixed(3)}</div>
+          </div>
+          <div class="item-row-field">
+            <div class="item-row-lbl">سعر الشراء</div>
+            <div class="item-row-val">${(item.buyPrice||0).toFixed(3)}</div>
+          </div>
+        </div>
+        <div class="item-row-line">
+          <div class="item-row-field">
+            <div class="item-row-lbl">الكمية الدفترية</div>
+            <div class="item-row-val">${item.actual}</div>
+          </div>
+          <div class="item-row-field">
+            <div class="item-row-lbl">الكمية المجرودة</div>
+            <div class="item-row-val green">${counted}</div>
+          </div>
+        </div>
+      </div>
+      <div class="item-row-footer">
+        <div>
+          <div class="item-row-diff-lbl">فرق الجرد</div>
+          <div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div>
+        </div>
+        <div>
+          <div class="item-row-diff-lbl">قيمة الفرق</div>
+          <div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAsnafSearch() {
+  const bar = document.getElementById('asnafSearchBar');
+  bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+  if (bar.style.display === 'block') document.getElementById('asnafSearchInput').focus();
+}
+
+function sortAsnaf() {
+  asnafSortAZ = !asnafSortAZ;
+  renderAsnaf();
+}
+
+function openItemDetail(code) {
+  // يفتح الجرد مباشرة للصنف
+  goTo('جرد');
+  setTimeout(() => loadItem(code), 100);
+}
+
+function openAddItem() {
+  document.getElementById('addCode').value = '';
+  document.getElementById('addName').value = '';
+  document.getElementById('addStore').value = '1';
+  document.getElementById('addSell').value = '';
+  document.getElementById('addBuy').value = '';
+  document.getElementById('addActual').value = '';
+  document.getElementById('addItemModal').classList.add('open');
+}
+
+function closeAddItem() {
+  document.getElementById('addItemModal').classList.remove('open');
+}
+
+function saveNewItem() {
+  const code = document.getElementById('addCode').value.trim();
+  const name = document.getElementById('addName').value.trim();
+  if (!code || !name) { alert('كود الصنف والاسم مطلوبان'); return; }
+
+  const db = JSON.parse(localStorage.getItem('itemsDB') || '{}');
+  db[code] = {
+    code,
+    name,
+    store: document.getElementById('addStore').value.trim() || '1',
+    sellPrice: parseFloat(document.getElementById('addSell').value) || 0,
+    buyPrice: parseFloat(document.getElementById('addBuy').value) || 0,
+    actual: parseFloat(document.getElementById('addActual').value) || 0,
+  };
+  localStorage.setItem('itemsDB', JSON.stringify(db));
+  Object.assign(itemsDB, db);
+  closeAddItem();
+  renderAsnaf();
+}
+
+document.getElementById('addItemModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddItem();
+});
+
+// تحديث الأصناف عند فتح الصفحة
+const _origGoTo = goTo;
+function goTo(name) {
+  _origGoTo(name);
+  if (name === 'اصناف') setTimeout(renderAsnaf, 50);
 }
 
 
