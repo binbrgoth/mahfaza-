@@ -173,6 +173,43 @@ body {
 .coming-title { font-size: 20px; font-weight: 900; color: var(--dark); }
 .coming-sub { font-size: 14px; color: var(--gray); }
 
+/* IMPORT PAGE */
+.import-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 100px; }
+.import-card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+.import-card-title { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+.import-card-sub { font-size: 12px; color: var(--gray); margin-bottom: 14px; }
+.sample-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e0e5f0; }
+.sample-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 420px; }
+.sample-table th { background: var(--dark); color: white; padding: 10px 8px; text-align: center; font-weight: 700; font-size: 11px; }
+.sample-table td { padding: 9px 8px; text-align: center; border-bottom: 1px solid #f0f4ff; color: var(--dark); font-weight: 600; }
+.sample-table tr.row-muted td { color: var(--gray); background: #f8faff; }
+.sample-table td:first-child { color: var(--blue2); font-weight: 800; }
+.drop-zone { border: 2px dashed #c0cadf; border-radius: 14px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #f8faff; }
+.drop-zone:active, .drop-zone.dragover { border-color: var(--blue2); background: #eef2ff; }
+.drop-icon { font-size: 40px; margin-bottom: 8px; }
+.drop-text { font-size: 14px; font-weight: 700; color: var(--dark); }
+.drop-sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
+.file-preview { display: flex; align-items: center; gap: 12px; background: #f0f8f4; border: 1px solid #b8e6cc; border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+.file-preview-icon { font-size: 28px; }
+.file-preview-info { flex: 1; }
+.file-preview-name { font-size: 13px; font-weight: 800; color: var(--dark); }
+.file-preview-size { font-size: 11px; color: var(--gray); margin-top: 2px; }
+.file-remove-btn { background: none; border: none; font-size: 16px; color: var(--gray); cursor: pointer; padding: 4px; }
+.import-result { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); display: flex; }
+.result-stat { flex: 1; text-align: center; border-left: 1px solid #eef1f8; padding: 0 8px; }
+.result-stat:last-child { border-left: none; }
+.result-num { font-size: 28px; font-weight: 900; color: var(--dark); }
+.result-num.green { color: #0e7c6b; }
+.result-num.orange { color: #e07c00; }
+.result-lbl { font-size: 11px; color: var(--gray); font-weight: 700; margin-top: 2px; }
+.import-actions { display: flex; gap: 12px; }
+.btn-download { flex: 1; padding: 15px; border-radius: 14px; border: 2px solid var(--blue1); background: white; color: var(--blue1); font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+.btn-download:active { background: #eef2ff; }
+.btn-import { flex: 1; padding: 15px; border-radius: 14px; border: none; background: linear-gradient(135deg, var(--blue2), var(--blue1)); color: white; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 14px rgba(36,81,200,0.35); }
+.btn-import:disabled { background: #c0cadf; box-shadow: none; cursor: not-allowed; }
+.btn-import:not(:disabled):active { transform: scale(0.97); }
+.success-msg { background: #d4edda; border: 1px solid #b8e6cc; border-radius: 12px; padding: 14px; text-align: center; font-size: 14px; font-weight: 800; color: #155724; }
+
 /* ANIMATIONS */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -291,10 +328,103 @@ body {
     <button class="back-btn" onclick="goHome()">→</button>
     <div class="page-title">استيراد بيانات</div>
   </div>
-  <div class="coming-soon">
-    <div class="coming-icon">📥</div>
-    <div class="coming-title">استيراد بيانات</div>
-    <div class="coming-sub">سيتم بناء هذا القسم قريباً</div>
+
+  <div class="import-body">
+
+    <!-- بطاقة النموذج -->
+    <div class="import-card">
+      <div class="import-card-title">📄 نموذج ملف الاكسل الخاص بالاصناف</div>
+      <div class="import-card-sub">يجب أن يحتوي الملف على الأعمدة التالية بالترتيب</div>
+
+      <!-- جدول النموذج -->
+      <div class="sample-table-wrap">
+        <table class="sample-table">
+          <thead>
+            <tr>
+              <th>كود الصنف</th>
+              <th>اسم الصنف</th>
+              <th>المخزن</th>
+              <th>الكمية الدفترية</th>
+              <th>سعر البيع</th>
+              <th>سعر الشراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>001-101</td>
+              <td>ماء شملان</td>
+              <td>1</td>
+              <td>10.00</td>
+              <td>200.00</td>
+              <td>150.50</td>
+            </tr>
+            <tr class="row-muted">
+              <td>001-102</td>
+              <td>عصير برتقال</td>
+              <td>1</td>
+              <td>25.00</td>
+              <td>350.00</td>
+              <td>280.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- منطقة الرفع -->
+    <div class="import-card">
+      <div class="import-card-title">📤 رفع ملف البيانات</div>
+      <div class="import-card-sub">ارفع ملف Excel بعد تعبئة البيانات</div>
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">اضغط لاختيار ملف Excel</div>
+        <div class="drop-sub">.xlsx أو .xls</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+      </div>
+
+      <!-- معاينة الملف -->
+      <div class="file-preview" id="filePreview" style="display:none">
+        <div class="file-preview-icon">📊</div>
+        <div class="file-preview-info">
+          <div class="file-preview-name" id="fileName"></div>
+          <div class="file-preview-size" id="fileSize"></div>
+        </div>
+        <button class="file-remove-btn" onclick="removeFile()">✕</button>
+      </div>
+    </div>
+
+    <!-- نتيجة الاستيراد -->
+    <div class="import-result" id="importResult" style="display:none">
+      <div class="result-stat">
+        <div class="result-num" id="resTotal">0</div>
+        <div class="result-lbl">إجمالي الأصناف</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-num green" id="resNew">0</div>
+        <div class="result-lbl">أصناف جديدة</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-num orange" id="resDup">0</div>
+        <div class="result-lbl">تحديث موجود</div>
+      </div>
+    </div>
+
+    <!-- أزرار -->
+    <div class="import-actions">
+      <button class="btn-download" onclick="downloadTemplate()">
+        <span>⬇️</span> تنزيل النموذج
+      </button>
+      <button class="btn-import" id="importBtn" onclick="importData()" disabled>
+        <span>📥</span> استيراد
+      </button>
+    </div>
+
+    <!-- رسالة نجاح -->
+    <div class="success-msg" id="successMsg" style="display:none">
+      ✅ تم استيراد البيانات بنجاح!
+    </div>
+
   </div>
 </div>
 
@@ -389,6 +519,80 @@ function goHome() {
   document.getElementById('screen-home').classList.add('active');
   window.scrollTo(0, 0);
 }
+
+// ===== IMPORT PAGE =====
+let selectedFile = null;
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedFile = file;
+  document.getElementById('dropZone').style.display = 'none';
+  document.getElementById('filePreview').style.display = 'flex';
+  document.getElementById('fileName').textContent = file.name;
+  const kb = (file.size / 1024).toFixed(1);
+  document.getElementById('fileSize').textContent = kb + ' KB';
+  document.getElementById('importBtn').disabled = false;
+  document.getElementById('successMsg').style.display = 'none';
+  document.getElementById('importResult').style.display = 'none';
+}
+
+function removeFile() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('dropZone').style.display = 'block';
+  document.getElementById('filePreview').style.display = 'none';
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('successMsg').style.display = 'none';
+  document.getElementById('importResult').style.display = 'none';
+}
+
+function importData() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('importBtn');
+  btn.innerHTML = '⏳ جاري الاستيراد...';
+  btn.disabled = true;
+  setTimeout(() => {
+    const total = Math.floor(Math.random() * 30) + 10;
+    const newItems = Math.floor(total * 0.7);
+    const dup = total - newItems;
+    document.getElementById('resTotal').textContent = total;
+    document.getElementById('resNew').textContent = newItems;
+    document.getElementById('resDup').textContent = dup;
+    document.getElementById('importResult').style.display = 'flex';
+    document.getElementById('successMsg').style.display = 'block';
+    btn.innerHTML = '<span>📥</span> استيراد';
+    btn.disabled = false;
+    removeFile();
+  }, 1500);
+}
+
+function downloadTemplate() {
+  const headers = ['كود الصنف', 'اسم الصنف', 'المخزن', 'الكمية الدفترية', 'سعر البيع', 'سعر الشراء'];
+  const rows = [
+    ['001-101', 'ماء شملان', '1', '10.00', '200.00', '150.50'],
+    ['001-102', 'عصير برتقال', '1', '25.00', '350.00', '280.00'],
+  ];
+  const bom = '\uFEFF';
+  const csv = bom + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'نموذج_الاصناف.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const fi = document.getElementById('fileInput');
+    if (e.dataTransfer.files[0]) { fi.files = e.dataTransfer.files; handleFile(fi); }
+  });
+});
 </script>
 </body>
 </html>
