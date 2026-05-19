@@ -987,6 +987,13 @@ function goTo(name) {
   if (name === 'اصناف') {
     loadAllData().then(() => renderAsnaf());
   }
+  if (name === 'جرد') {
+    // عند الدخول من الرئيسية نظهر الكاميرا ونخفي البطاقة
+    const scanSection = document.getElementById('scanSection');
+    const itemCard = document.getElementById('itemCard');
+    if (scanSection) scanSection.style.display = 'block';
+    if (itemCard) itemCard.style.display = 'none';
+  }
 }
 
 function goHome() {
@@ -995,6 +1002,11 @@ function goHome() {
   if (home) home.classList.add('active');
   window.scrollTo(0, 0);
   stopCamera();
+  // إعادة تهيئة صفحة الجرد
+  const scanSection = document.getElementById('scanSection');
+  if (scanSection) scanSection.style.display = 'block';
+  const itemCard = document.getElementById('itemCard');
+  if (itemCard) itemCard.style.display = 'none';
 }
 
 // ===== IMPORT PAGE =====
@@ -1406,9 +1418,11 @@ function sortAsnaf() {
 }
 
 function openItemDetail(code) {
-  // يفتح الجرد مباشرة للصنف
   goTo('جرد');
-  setTimeout(() => loadItem(code), 100);
+  setTimeout(() => {
+    document.getElementById('scanSection').style.display = 'none';
+    loadItem(code);
+  }, 100);
 }
 
 function openAddItem() {
