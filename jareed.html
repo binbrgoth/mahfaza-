@@ -1372,32 +1372,14 @@ function renderAsnaf() {
           <div class="item-row-code">${item.code}</div>
         </div>
         <div class="item-row-body">
-          <div class="item-row-field">
-            <div class="item-row-lbl">سعر البيع</div>
-            <div class="item-row-val accent">${(item.sellPrice||0).toFixed(3)}</div>
-          </div>
-          <div class="item-row-field">
-            <div class="item-row-lbl">سعر الشراء</div>
-            <div class="item-row-val">${(item.buyPrice||0).toFixed(3)}</div>
-          </div>
-          <div class="item-row-field">
-            <div class="item-row-lbl">الكمية الدفترية</div>
-            <div class="item-row-val">${item.actual}</div>
-          </div>
-          <div class="item-row-field">
-            <div class="item-row-lbl">الكمية المجرودة</div>
-            <div class="item-row-val green">${counted}</div>
-          </div>
+          <div class="item-row-field"><div class="item-row-lbl">البيع</div><div class="item-row-val accent">${(item.sellPrice||0).toFixed(3)}</div></div>
+          <div class="item-row-field"><div class="item-row-lbl">التكلفة</div><div class="item-row-val">${(item.buyPrice||0).toFixed(3)}</div></div>
+          <div class="item-row-field"><div class="item-row-lbl">الدفتري</div><div class="item-row-val">${item.actual}</div></div>
+          <div class="item-row-field"><div class="item-row-lbl">المجرود</div><div class="item-row-val green">${counted}</div></div>
         </div>
         <div class="item-row-footer">
-          <div>
-            <div class="item-row-diff-lbl">فرق الجرد</div>
-            <div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div>
-          </div>
-          <div>
-            <div class="item-row-diff-lbl">قيمة الفرق</div>
-            <div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div>
-          </div>
+          <div><div class="item-row-diff-lbl">فرق الجرد</div><div class="item-row-diff-val ${diffClass}">${diffSign}${diff}</div></div>
+          <div><div class="item-row-diff-lbl">قيمة الفرق</div><div class="item-row-diff-val ${diffClass}">${diffValSign}${Math.abs(diffVal).toFixed(3)} د.ك</div></div>
         </div>
       </div>`;
   }).join('');
