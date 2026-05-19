@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>نظام الجرد — السوق المركزي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -281,6 +282,7 @@ body {
 .grid-bottom .card:nth-child(3) { animation-delay: 0.3s; }
 .grid-full .card { animation-delay: 0.35s; }
 </style>
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 </head>
 <body>
 
@@ -665,19 +667,57 @@ function importData() {
   const btn = document.getElementById('importBtn');
   btn.innerHTML = '⏳ جاري الاستيراد...';
   btn.disabled = true;
-  setTimeout(() => {
-    const total = Math.floor(Math.random() * 30) + 10;
-    const newItems = Math.floor(total * 0.7);
-    const dup = total - newItems;
-    document.getElementById('resTotal').textContent = total;
-    document.getElementById('resNew').textContent = newItems;
-    document.getElementById('resDup').textContent = dup;
-    document.getElementById('importResult').style.display = 'flex';
-    document.getElementById('successMsg').style.display = 'block';
-    btn.innerHTML = '<span>📥</span> استيراد';
-    btn.disabled = false;
-    removeFile();
-  }, 1500);
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      // تخطي الصف الأول (العناوين)
+      const dataRows = rows.slice(1).filter(r => r[0] || r[1]);
+
+      const existing = JSON.parse(localStorage.getItem('itemsDB') || '{}');
+      let newCount = 0, dupCount = 0;
+
+      dataRows.forEach(r => {
+        // الأعمدة: كود الصنف، اسم الصنف، المخزن، الكمية الدفترية، سعر البيع، سعر الشراء
+        const code = String(r[0] || '').trim();
+        const name = String(r[1] || '').trim();
+        const store = String(r[2] || '1').trim();
+        const actual = parseFloat(r[3]) || 0;
+        const sellPrice = parseFloat(r[4]) || 0;
+        const buyPrice = parseFloat(r[5]) || 0;
+
+        if (!code) return;
+        if (existing[code]) dupCount++; else newCount++;
+
+        existing[code] = { code, name, store, actual, sellPrice, buyPrice };
+      });
+
+      localStorage.setItem('itemsDB', JSON.stringify(existing));
+
+      // تحديث قاعدة البيانات في الذاكرة
+      Object.assign(itemsDB, existing);
+
+      const total = newCount + dupCount;
+      document.getElementById('resTotal').textContent = total;
+      document.getElementById('resNew').textContent = newCount;
+      document.getElementById('resDup').textContent = dupCount;
+      document.getElementById('importResult').style.display = 'flex';
+      document.getElementById('successMsg').style.display = 'block';
+      btn.innerHTML = '<span>📥</span> استيراد';
+      btn.disabled = false;
+      removeFile();
+    } catch(err) {
+      alert('خطأ في قراءة الملف: ' + err.message);
+      btn.innerHTML = '<span>📥</span> استيراد';
+      btn.disabled = false;
+    }
+  };
+  reader.readAsArrayBuffer(selectedFile);
 }
 
 function downloadTemplate() {
@@ -712,12 +752,8 @@ let cameraStream = null;
 let cameraActive = false;
 let currentItem = null;
 
-// بيانات تجريبية للأصناف
-const itemsDB = {
-  '9501100040107': { code: '001-001-004-001', name: 'ماء شملان 1.5L', store: '1', sellPrice: 200, buyPrice: 150.5, actual: 100 },
-  '001-101': { code: '001-101', name: 'عصير برتقال', store: '1', sellPrice: 350, buyPrice: 280, actual: 25 },
-  '001-102': { code: '001-102', name: 'شاي أحمر', store: '2', sellPrice: 500, buyPrice: 400, actual: 50 },
-};
+// قاعدة بيانات الأصناف - تُحمَّل من localStorage
+const itemsDB = JSON.parse(localStorage.getItem('itemsDB') || '{}');
 
 // تاريخ الجرد
 let jareedHistory = JSON.parse(localStorage.getItem('jareedHistory') || '{}');
@@ -742,16 +778,8 @@ async function startCamera() {
     btn.innerHTML = '<span>⏹️</span> إيقاف الكاميرا';
     btn.classList.add('active');
 
-    // محاكاة قراءة الباركود بعد 3 ثواني للتجربة
-    // في الواقع يحتاج مكتبة ZXing أو QuaggaJS
-    setTimeout(() => {
-      if (cameraActive) {
-        const codes = Object.keys(itemsDB);
-        const randomCode = codes[Math.floor(Math.random() * codes.length)];
-        stopCamera();
-        loadItem(randomCode);
-      }
-    }, 3000);
+    // قراءة الباركود بمكتبة ZXing
+    startBarcodeScanner();
 
   } catch(e) {
     alert('تعذر فتح الكاميرا. تأكد من منح الإذن أو استخدم الإدخال اليدوي.');
@@ -879,6 +907,39 @@ function closeHistory() {
 document.getElementById('historyModal').addEventListener('click', function(e) {
   if (e.target === this) closeHistory();
 });
+
+// ===== REAL BARCODE SCANNER =====
+let codeReader = null;
+
+async function startBarcodeScanner() {
+  try {
+    if (typeof ZXing === 'undefined') {
+      // ZXing not loaded, fallback
+      return;
+    }
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    const video = document.getElementById('camVideo');
+    await codeReader.decodeFromVideoDevice(null, video, (result, err) => {
+      if (result && cameraActive) {
+        stopCamera();
+        loadItem(result.getText());
+      }
+    });
+  } catch(e) {
+    console.log('ZXing error:', e);
+  }
+}
+
+// Override stopCamera to also stop ZXing
+const _origStopCamera = stopCamera;
+function stopCamera() {
+  if (codeReader) {
+    try { codeReader.reset(); } catch(e) {}
+    codeReader = null;
+  }
+  _origStopCamera();
+}
+
 
 </script>
 </body>
