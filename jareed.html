@@ -518,7 +518,10 @@ body.worker-mode .admin-only { display:none !important; }
 
   <!-- شريط البحث -->
   <div class="asnaf-search-bar" id="asnafSearchBar" style="display:none">
-    <input type="text" id="asnafSearchInput" class="asnaf-search-input" placeholder="ابحث باسم الصنف أو الكود..." oninput="renderAsnaf()" onchange="renderAsnaf()" onkeyup="renderAsnaf()">
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="asnafSearchInput" class="asnaf-search-input" style="flex:1" placeholder="ابحث باسم الصنف أو الكود...">
+      <button onclick="renderAsnaf()" style="background:var(--blue2);border:none;color:white;padding:0 14px;border-radius:10px;font-family:Cairo,sans-serif;font-weight:800;font-size:13px;cursor:pointer;">بحث</button>
+    </div>
   </div>
 
   <!-- إحصائية سريعة -->
@@ -1533,11 +1536,14 @@ function renderAsnaf() {
   const items = Object.values(itemsDB);
   const search = (document.getElementById('asnafSearchInput')?.value || '').toLowerCase();
 
-  let filtered = items.filter(i =>
-    !search || 
-    (i.name || '').toLowerCase().includes(search) || 
-    (String(i.code) || '').toLowerCase().includes(search)
-  );
+  let filtered = items.filter(i => {
+    if (!search) return true;
+    const name = (i.name || '').toLowerCase();
+    const code = String(i.code || '');
+    const codePadded = code.padStart(6, '0');
+    const searchLower = search.toLowerCase();
+    return name.includes(searchLower) || code.includes(searchLower) || codePadded.includes(searchLower);
+  });
 
   if (asnafSortAZ) filtered.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
