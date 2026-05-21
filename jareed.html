@@ -1791,19 +1791,35 @@ function closeEditItem() {
 }
 
 async function saveEditItem() {
-  const code = document.getElementById('editCode').value;
+  const oldCode = currentOptionsCode;
+  const newCode = document.getElementById('editCode').value.trim().padStart(6, '0');
   const name = document.getElementById('editName').value.trim();
+  if (!newCode) { alert('كود الصنف مطلوب'); return; }
   if (!name) { alert('اسم الصنف مطلوب'); return; }
+
+  // تحقق إذا الكود الجديد يتعارض مع كود آخر
+  if (newCode !== oldCode && itemsDB[newCode]) {
+    alert('الكود ' + newCode + ' مستخدم لصنف آخر: ' + itemsDB[newCode].name);
+    return;
+  }
+  const code = newCode;
 
   try {
     const item = {
-      code,
+      code: newCode,
       name,
       store: document.getElementById('editStore').value.trim() || '1',
       sell_price: parseFloat(document.getElementById('editSell').value) || 0,
       buy_price: parseFloat(document.getElementById('editBuy').value) || 0,
       actual: parseFloat(document.getElementById('editActual').value) || 0,
     };
+    // إذا تغير الكود، احذف القديم وأضف الجديد
+    if (code !== oldCode) {
+      await sb.delete('jareed', 'item_code=eq.' + encodeURIComponent(oldCode));
+      await sb.delete('items', 'code=eq.' + encodeURIComponent(oldCode));
+      delete itemsDB[oldCode];
+      delete jareedHistory[oldCode];
+    }
     await sb.upsert('items', item);
 
     // تحديث الكاش المحلي
@@ -1908,7 +1924,7 @@ async function deleteFromCard() {
     <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
       <div class="add-field">
         <label class="add-label">كود الصنف</label>
-        <input type="text" id="editCode" class="add-input" disabled style="background:#f0f4ff; color:#6b7a99;">
+        <input type="text" id="editCode" class="add-input" placeholder="كود الصنف">
       </div>
       <div class="add-field">
         <label class="add-label">اسم الصنف *</label>
