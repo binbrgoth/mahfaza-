@@ -1534,56 +1534,54 @@ let asnafSortAZ = false;
 
 function renderAsnaf() {
   const items = Object.values(itemsDB);
-  console.log('renderAsnaf: items count =', items.length, 'itemsDB keys =', Object.keys(itemsDB));
   const searchEl = document.getElementById('asnafSearchInput');
-  const search = (searchEl?.value || '').toLowerCase().trim();
-  console.log('search term:', search);
+  const search = (searchEl ? searchEl.value : '').toLowerCase().trim();
 
-  let filtered = items.filter(i => {
-    if (!search) return true;
+  // فلترة
+  const filtered = search ? items.filter(i => {
     const name = (i.name || '').toLowerCase();
     const code = String(i.code || '');
-    const codePadded = code.padStart(6, '0');
-    const searchLower = search.toLowerCase().trim();
-    const match = name.includes(searchLower) || code.includes(searchLower) || codePadded.includes(searchLower);
-    console.log('item:', code, 'name:', name, 'search:', searchLower, 'match:', match);
-    return match;
-  });
-  console.log('filtered count:', filtered.length);
+    return name.includes(search) || code.includes(search);
+  }) : items;
 
-  if (asnafSortAZ) filtered.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  // ترتيب
+  if (asnafSortAZ) filtered.sort((a, b) => (a.name||'').localeCompare(b.name||'', 'ar'));
 
-  const list = document.getElementById('asnafList');
-  const empty = document.getElementById('asnafEmpty');
-  if (!list || !empty) return;
-
-  // stats
+  // إحصائيات
   let okCount = 0, diffCount = 0;
   items.forEach(i => {
     const counted = jareedHistory[i.code]?.counted || 0;
     if (counted === i.actual) okCount++; else diffCount++;
   });
-  document.getElementById('statTotal').textContent = items.length;
-  document.getElementById('statOk').textContent = okCount;
-  document.getElementById('statDiff').textContent = diffCount;
+  const statTotal = document.getElementById('statTotal');
+  const statOk = document.getElementById('statOk');
+  const statDiff = document.getElementById('statDiff');
+  if (statTotal) statTotal.textContent = items.length;
+  if (statOk) statOk.textContent = okCount;
+  if (statDiff) statDiff.textContent = diffCount;
+
+  // رسم القائمة
+  const container = document.getElementById('asnafList');
+  if (!container) return;
 
   if (filtered.length === 0) {
-    list.innerHTML = '';
-    list.appendChild(empty);
-    empty.style.display = 'flex';
+    container.innerHTML = `<div class="asnaf-empty" style="display:flex">
+      <div class="asnaf-empty-icon">📦</div>
+      <div class="asnaf-empty-title">${search ? 'لا توجد نتائج' : 'لا توجد أصناف'}</div>
+      <div class="asnaf-empty-sub">${search ? 'جرب كلمة بحث مختلفة' : 'قم باستيراد بيانات الأصناف أولاً'}</div>
+      ${!search ? '<button class="btn-go-import" onclick="goTo(\'استيراد\')">استيراد بيانات</button>' : ''}
+    </div>`;
     return;
   }
-  empty.style.display = 'none';
 
-  list.innerHTML = filtered.map(item => {
+  container.innerHTML = filtered.map(item => {
     const counted = jareedHistory[item.code]?.counted || 0;
     const diff = counted - item.actual;
-    const diffVal = diff * item.buyPrice;
+    const diffVal = diff * (item.buyPrice || 0);
     const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero';
     const diffSign = diff > 0 ? '+' : '';
     const diffValSign = diffVal > 0 ? '+' : '';
-    return `
-        <div class="item-row-card" onclick="showItemOptions('${item.code}')">
+    return `<div class="item-row-card" onclick="showItemOptions('${item.code}')">
         <div class="item-row-card-header">
           <div class="item-row-name">${item.name}</div>
           <div class="item-row-code">${item.code}</div>
@@ -1599,6 +1597,7 @@ function renderAsnaf() {
       </div>`;
   }).join('');
 }
+
 
 function toggleAsnafSearch() {
   const bar = document.getElementById('asnafSearchBar');
