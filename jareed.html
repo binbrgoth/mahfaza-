@@ -1544,9 +1544,12 @@ function renderAsnaf() {
     const name = (i.name || '').toLowerCase();
     const code = String(i.code || '');
     const codePadded = code.padStart(6, '0');
-    const searchLower = search.toLowerCase();
-    return name.includes(searchLower) || code.includes(searchLower) || codePadded.includes(searchLower);
+    const searchLower = search.toLowerCase().trim();
+    const match = name.includes(searchLower) || code.includes(searchLower) || codePadded.includes(searchLower);
+    console.log('item:', code, 'name:', name, 'search:', searchLower, 'match:', match);
+    return match;
   });
+  console.log('filtered count:', filtered.length);
 
   if (asnafSortAZ) filtered.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
