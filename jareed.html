@@ -476,17 +476,17 @@ body.worker-mode .admin-only { display:none !important; }
         <div class="card-icon">📋</div>
         <div class="card-label">جرد جديد</div>
       </div>
-      <div class="card card-blue1" onclick="goTo('استيراد')">
+      <div class="card card-blue1 admin-only" onclick="goTo('استيراد')">
         <div class="card-icon">📥</div>
         <div class="card-label">استيراد بيانات</div>
       </div>
     </div>
     <div class="grid-bottom">
-      <div class="card card-dark" onclick="goTo('حسابي')">
+      <div class="card card-dark admin-only" onclick="goTo('حسابي')">
         <div class="card-icon">👤</div>
         <div class="card-label">حسابي</div>
       </div>
-      <div class="card card-teal" onclick="goTo('بحث')">
+      <div class="card card-teal admin-only" onclick="goTo('بحث')">
         <div class="card-icon">🔍</div>
         <div class="card-label">بحث</div>
       </div>
@@ -650,8 +650,8 @@ body.worker-mode .admin-only { display:none !important; }
         <div class="item-code" id="iCode">—</div>
       </div>
       <div style="display:flex; gap:8px; margin-right:auto;">
-        <button class="item-card-btn edit-btn" onclick="openEditFromCard()" title="تعديل">✏️</button>
-        <button class="item-card-btn delete-btn" onclick="deleteFromCard()" title="حذف">🗑️</button>
+        <button class="item-card-btn edit-btn admin-only" onclick="openEditFromCard()" title="تعديل">✏️</button>
+        <button class="item-card-btn delete-btn admin-only" onclick="deleteFromCard()" title="حذف">🗑️</button>
       </div>
     </div>
     <div class="item-row">
@@ -982,10 +982,10 @@ body.worker-mode .admin-only { display:none !important; }
   <button class="nav-item" onclick="goTo('جرد')">
     <div class="nav-icon">📋</div><span>جرد</span>
   </button>
-  <button class="nav-item" onclick="goTo('بحث')">
+  <button class="nav-item" onclick="goTo('بحث')" class="admin-only">
     <div class="nav-icon">🔍</div><span>بحث</span>
   </button>
-  <button class="nav-item" onclick="goTo('حسابي')">
+  <button class="nav-item" onclick="goTo('حسابي')" class="admin-only">
     <div class="nav-icon">👤</div><span>حسابي</span>
   </button>
 </div>
