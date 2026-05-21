@@ -310,6 +310,9 @@ body {
 .login-input { padding:14px 16px; border:2px solid #d0d8ec; border-radius:12px; font-family:'Cairo',sans-serif; font-size:14px; font-weight:700; color:var(--dark); outline:none; transition:border-color 0.2s; }
 .login-input:focus { border-color:var(--blue2); }
 .login-error { background:#ffeaea; border:1px solid #ffcdd2; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; color:#c62828; text-align:center; }
+.branch-btn { width:100%; padding:14px 18px; border-radius:14px; border:2px solid #e0e8ff; background:white; color:var(--dark); font-family:'Cairo',sans-serif; font-size:15px; font-weight:800; cursor:pointer; text-align:right; transition:all 0.2s; }
+.branch-btn:active { background:var(--blue2); color:white; border-color:var(--blue2); transform:scale(0.97); }
+.branch-label { background:rgba(255,255,255,0.15); color:white; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; margin-right:auto; }
 .login-btn { padding:16px; border-radius:14px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:16px; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(36,81,200,0.4); transition:all 0.2s; margin-top:4px; }
 .login-btn:active { transform:scale(0.97); }
 
@@ -452,6 +455,25 @@ body.worker-mode .admin-only { display:none !important; }
         </div>
         <div class="login-error" id="loginError" style="display:none">❌ اسم المستخدم أو كلمة المرور غلط</div>
         <button class="login-btn" onclick="doLogin()">تسجيل الدخول</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- شاشة اختيار الفرع -->
+<div class="screen" id="screen-branch">
+  <div class="login-bg" style="background:linear-gradient(145deg, #0e7c6b, #1a2340);">
+    <div class="login-box">
+      <div class="login-logo">🏪</div>
+      <div class="login-title">اختر فرعك</div>
+      <div class="login-sub">السوق المركزي</div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+        <button class="branch-btn" onclick="selectBranch('فرع الملكي')">🏢 فرع الملكي</button>
+        <button class="branch-btn" onclick="selectBranch('فرع كبد')">🏢 فرع كبد</button>
+        <button class="branch-btn" onclick="selectBranch('فرع الري')">🏢 فرع الري</button>
+        <button class="branch-btn" onclick="selectBranch('فرع القرين')">🏢 فرع القرين</button>
+        <button class="branch-btn" onclick="selectBranch('فرع الاسطبلات')">🏢 فرع الاسطبلات</button>
+        <button class="branch-btn" onclick="selectBranch('فرع المعارض')">🏢 فرع المعارض</button>
       </div>
     </div>
   </div>
@@ -1020,10 +1042,9 @@ function doLogin() {
       document.body.classList.remove('worker-mode');
     }
 
-    // تحميل البيانات والانتقال للرئيسية
+    // الانتقال لاختيار الفرع
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screen-home').classList.add('active');
-    loadAllData();
+    document.getElementById('screen-branch').classList.add('active');
   } else {
     err.style.display = 'block';
   }
@@ -1053,6 +1074,23 @@ function logout() {
   document.getElementById('loginPass').value = '';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-login').classList.add('active');
+}
+
+
+// ===== BRANCH SELECTION =====
+let currentBranch = '';
+
+function selectBranch(branch) {
+  currentBranch = branch;
+
+  // تحديث الهيدر باسم الفرع
+  const headerTitle = document.querySelector('.header-title');
+  if (headerTitle) headerTitle.textContent = '🏪 ' + branch;
+
+  // الانتقال للرئيسية وتحميل البيانات
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  loadAllData();
 }
 
 // ===== SUPABASE CONFIG =====
@@ -1429,7 +1467,7 @@ async function saveJareed() {
 
   try {
     // حفظ في Supabase
-    const result = await sb.insert('jareed', { item_code: barcode, qty });
+    const result = await sb.insert('jareed', { item_code: barcode, qty, branch: currentBranch });
     const now = new Date();
     const timeStr = now.toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' });
 
