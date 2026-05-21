@@ -1839,10 +1839,34 @@ async function saveEditItem() {
       actual: parseFloat(document.getElementById('editActual').value) || 0,
     };
     await sb.upsert('items', item);
-    itemsDB[code] = { code, name, store: item.store, actual: item.actual, sellPrice: item.sell_price, buyPrice: item.buy_price };
+
+    // تحديث الكاش المحلي
+    itemsDB[code] = {
+      code, name,
+      store: item.store,
+      actual: item.actual,
+      sellPrice: item.sell_price,
+      buyPrice: item.buy_price
+    };
+
     closeEditItem();
-    renderAsnaf();
     currentOptionsCode = null;
+
+    // تحديث بطاقة الجرد إذا كانت مفتوحة لنفس الصنف
+    if (currentItem && currentItem.barcode === code) {
+      currentItem = { ...itemsDB[code], barcode: code };
+      document.getElementById('iName').textContent = name;
+      document.getElementById('iStore').textContent = 'مخزن ' + item.store;
+      document.getElementById('iSellPrice').textContent = item.sell_price.toFixed(3) + ' د.ك';
+      document.getElementById('iBuyPrice').textContent = item.buy_price.toFixed(3) + ' د.ك';
+      document.getElementById('iActual').textContent = item.actual;
+    }
+
+    // تحديث قائمة الأصناف إذا كانت مفتوحة
+    const asnafScreen = document.getElementById('screen-اصناف');
+    if (asnafScreen && asnafScreen.classList.contains('active')) renderAsnaf();
+
+    alert('✅ تم حفظ التعديلات بنجاح');
   } catch(e) { alert('خطأ: ' + e.message); }
 }
 
@@ -1892,18 +1916,18 @@ async function deleteFromCard() {
   if (!currentItem) return;
   const code = currentItem.barcode;
   const item = itemsDB[code];
-  if (!item) return;
+  if (!item) { alert('الصنف غير موجود'); return; }
   if (!confirm('هل تريد حذف الصنف: ' + item.name + '؟')) return;
   try {
-    await sb.delete('items', 'code=eq.' + encodeURIComponent(code));
     await sb.delete('jareed', 'item_code=eq.' + encodeURIComponent(code));
+    await sb.delete('items', 'code=eq.' + encodeURIComponent(code));
     delete itemsDB[code];
     delete jareedHistory[code];
     currentItem = null;
     document.getElementById('itemCard').style.display = 'none';
     document.getElementById('scanSection').style.display = 'block';
-    alert('تم حذف الصنف بنجاح');
-  } catch(e) { alert('خطأ: ' + e.message); }
+    alert('✅ تم حذف الصنف بنجاح');
+  } catch(e) { alert('خطأ في الحذف: ' + e.message); }
 }
 
 
