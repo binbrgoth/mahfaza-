@@ -514,45 +514,6 @@ body {
     </div>
   </div>
 
-  <!-- مودال تعديل صنف -->
-  <div class="modal-overlay" id="editItemModal">
-    <div class="modal-box" style="border-radius:20px; margin:20px; max-height:85vh; overflow-y:auto;">
-      <div class="modal-head">
-        <div class="modal-title">✏️ تعديل الصنف</div>
-        <button class="modal-close" onclick="closeEditItem()">✕</button>
-      </div>
-      <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
-        <div class="add-field">
-          <label class="add-label">كود الصنف</label>
-          <input type="text" id="editCode" class="add-input" disabled style="background:#f0f4ff; color:#6b7a99;">
-        </div>
-        <div class="add-field">
-          <label class="add-label">اسم الصنف *</label>
-          <input type="text" id="editName" class="add-input" placeholder="اسم الصنف">
-        </div>
-        <div class="add-field">
-          <label class="add-label">المخزن</label>
-          <input type="text" id="editStore" class="add-input" placeholder="1">
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div class="add-field">
-            <label class="add-label">سعر البيع</label>
-            <input type="number" id="editSell" class="add-input" placeholder="0.000">
-          </div>
-          <div class="add-field">
-            <label class="add-label">سعر الشراء</label>
-            <input type="number" id="editBuy" class="add-input" placeholder="0.000">
-          </div>
-        </div>
-        <div class="add-field">
-          <label class="add-label">الكمية الدفترية</label>
-          <input type="number" id="editActual" class="add-input" placeholder="0">
-        </div>
-        <button class="btn-save-add" onclick="saveEditItem()">💾 حفظ التعديلات</button>
-      </div>
-    </div>
-  </div>
-
   <!-- مودال إضافة صنف -->
   <div class="modal-overlay" id="addItemModal">
     <div class="modal-box" style="border-radius:20px; margin:20px; max-height:85vh; overflow-y:auto;">
@@ -1937,5 +1898,44 @@ async function deleteFromCard() {
 
 
 </script>
+<!-- مودال تعديل صنف - عام -->
+<div class="modal-overlay" id="editItemModal">
+  <div class="modal-box" style="border-radius:20px; margin:20px; max-height:85vh; overflow-y:auto;">
+    <div class="modal-head">
+      <div class="modal-title">✏️ تعديل الصنف</div>
+      <button class="modal-close" onclick="closeEditItem()">✕</button>
+    </div>
+    <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+      <div class="add-field">
+        <label class="add-label">كود الصنف</label>
+        <input type="text" id="editCode" class="add-input" disabled style="background:#f0f4ff; color:#6b7a99;">
+      </div>
+      <div class="add-field">
+        <label class="add-label">اسم الصنف *</label>
+        <input type="text" id="editName" class="add-input" placeholder="اسم الصنف">
+      </div>
+      <div class="add-field">
+        <label class="add-label">المخزن</label>
+        <input type="text" id="editStore" class="add-input" placeholder="1">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="add-field">
+          <label class="add-label">سعر البيع</label>
+          <input type="number" id="editSell" class="add-input" placeholder="0.000">
+        </div>
+        <div class="add-field">
+          <label class="add-label">سعر الشراء</label>
+          <input type="number" id="editBuy" class="add-input" placeholder="0.000">
+        </div>
+      </div>
+      <div class="add-field">
+        <label class="add-label">الكمية الدفترية</label>
+        <input type="number" id="editActual" class="add-input" placeholder="0">
+      </div>
+      <button class="btn-save-add" onclick="saveEditItem()">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
