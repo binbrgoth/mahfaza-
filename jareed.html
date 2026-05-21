@@ -518,7 +518,7 @@ body.worker-mode .admin-only { display:none !important; }
 
   <!-- شريط البحث -->
   <div class="asnaf-search-bar" id="asnafSearchBar" style="display:none">
-    <input type="text" id="asnafSearchInput" class="asnaf-search-input" placeholder="ابحث باسم الصنف أو الكود..." oninput="renderAsnaf()">
+    <input type="text" id="asnafSearchInput" class="asnaf-search-input" placeholder="ابحث باسم الصنف أو الكود..." oninput="renderAsnaf()" onchange="renderAsnaf()" onkeyup="renderAsnaf()">
   </div>
 
   <!-- إحصائية سريعة -->
@@ -1534,7 +1534,9 @@ function renderAsnaf() {
   const search = (document.getElementById('asnafSearchInput')?.value || '').toLowerCase();
 
   let filtered = items.filter(i =>
-    !search || i.name.toLowerCase().includes(search) || i.code.toLowerCase().includes(search)
+    !search || 
+    (i.name || '').toLowerCase().includes(search) || 
+    (String(i.code) || '').toLowerCase().includes(search)
   );
 
   if (asnafSortAZ) filtered.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
