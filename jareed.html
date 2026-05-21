@@ -1787,8 +1787,13 @@ function showItemOptions(code) {
   currentOptionsCode = code;
   const item = itemsDB[code];
   if (!item) return;
-  document.getElementById('optionsItemName').textContent = item.name;
-  document.getElementById('itemOptionsModal').classList.add('open');
+  // الدخول مباشرة للجرد
+  const savedCode = code;
+  goTo('جرد');
+  setTimeout(() => {
+    document.getElementById('scanSection').style.display = 'none';
+    loadItem(savedCode);
+  }, 150);
 }
 
 function closeItemOptions() {
