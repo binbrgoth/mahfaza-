@@ -298,6 +298,25 @@ body {
 .add-input:focus { border-color:var(--blue2); }
 .btn-save-add { width:100%; padding:15px; border-radius:14px; border:none; background:linear-gradient(135deg,var(--teal),#0e7c6b); color:white; font-family:'Cairo',sans-serif; font-size:15px; font-weight:900; cursor:pointer; margin-top:4px; }
 
+/* LOGIN PAGE */
+.login-bg { min-height:100vh; background:linear-gradient(145deg, #1a2340, #2a3a6a); display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-box { background:white; border-radius:24px; padding:32px 24px; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.login-logo { font-size:56px; text-align:center; margin-bottom:8px; }
+.login-title { font-size:22px; font-weight:900; color:var(--dark); text-align:center; }
+.login-sub { font-size:13px; color:var(--gray); text-align:center; margin-bottom:28px; }
+.login-form { display:flex; flex-direction:column; gap:16px; }
+.login-field { display:flex; flex-direction:column; gap:6px; }
+.login-label { font-size:13px; font-weight:800; color:var(--dark); }
+.login-input { padding:14px 16px; border:2px solid #d0d8ec; border-radius:12px; font-family:'Cairo',sans-serif; font-size:14px; font-weight:700; color:var(--dark); outline:none; transition:border-color 0.2s; }
+.login-input:focus { border-color:var(--blue2); }
+.login-error { background:#ffeaea; border:1px solid #ffcdd2; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; color:#c62828; text-align:center; }
+.login-btn { padding:16px; border-radius:14px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:16px; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(36,81,200,0.4); transition:all 0.2s; margin-top:4px; }
+.login-btn:active { transform:scale(0.97); }
+
+/* WORKER MODE - hide prices */
+body.worker-mode .price-field { display:none !important; }
+body.worker-mode .admin-only { display:none !important; }
+
 /* JAREED PAGE */
 .header-action-btn { background: rgba(255,255,255,0.15); border: none; color: white; font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
 .scan-section { padding: 16px; }
@@ -414,11 +433,35 @@ body {
 </head>
 <body>
 
+<!-- شاشة تسجيل الدخول -->
+<div class="screen active" id="screen-login">
+  <div class="login-bg">
+    <div class="login-box">
+      <div class="login-logo">🏪</div>
+      <div class="login-title">السوق المركزي</div>
+      <div class="login-sub">نظام إدارة الجرد</div>
+
+      <div class="login-form">
+        <div class="login-field">
+          <label class="login-label">اسم المستخدم</label>
+          <input type="text" id="loginUser" class="login-input" placeholder="أدخل اسم المستخدم" autocomplete="username">
+        </div>
+        <div class="login-field">
+          <label class="login-label">كلمة المرور</label>
+          <input type="password" id="loginPass" class="login-input" placeholder="أدخل كلمة المرور" autocomplete="current-password">
+        </div>
+        <div class="login-error" id="loginError" style="display:none">❌ اسم المستخدم أو كلمة المرور غلط</div>
+        <button class="login-btn" onclick="doLogin()">تسجيل الدخول</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- HOME SCREEN -->
-<div class="screen active" id="screen-home">
+<div class="screen" id="screen-home">
   <div class="header">
     <div class="header-title">🏪 السوق المركزي</div>
-    <div class="header-icon">👤</div>
+    <button class="header-icon" onclick="logout()" title="تسجيل الخروج">🚪</button>
   </div>
 
 
@@ -447,13 +490,13 @@ body {
         <div class="card-icon">🔍</div>
         <div class="card-label">بحث</div>
       </div>
-      <div class="card card-gray" onclick="goTo('بيانات')">
+      <div class="card card-gray admin-only" onclick="goTo('بيانات')">
         <div class="card-icon">🗂️</div>
         <div class="card-label">إدارة البيانات</div>
       </div>
     </div>
     <div class="grid-full">
-      <div class="card card-wide" onclick="goTo('ادارة')">
+      <div class="card card-wide admin-only" onclick="goTo('ادارة')">
         <div class="card-icon">⚙️</div>
         <div class="card-label">إدارة الجرد</div>
       </div>
@@ -617,7 +660,7 @@ body {
         <div class="item-field-val" id="iStore">—</div>
       </div>
     </div>
-    <div class="item-row two-col">
+    <div class="item-row two-col price-field">
       <div class="item-field">
         <div class="item-field-lbl">سعر البيع</div>
         <div class="item-field-val accent" id="iSellPrice">—</div>
@@ -949,6 +992,66 @@ body {
 
 <script>
 
+
+// ===== LOGIN SYSTEM =====
+const USERS = {
+  'admin':  { pass: '123456', role: 'admin' },
+  'worker': { pass: '123456', role: 'worker' }
+};
+
+let currentRole = null;
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginError');
+
+  if (USERS[user] && USERS[user].pass === pass) {
+    currentRole = USERS[user].role;
+    err.style.display = 'none';
+
+    // تطبيق صلاحيات العامل
+    if (currentRole === 'worker') {
+      document.body.classList.add('worker-mode');
+    } else {
+      document.body.classList.remove('worker-mode');
+    }
+
+    // تحميل البيانات والانتقال للرئيسية
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-home').classList.add('active');
+    loadAllData();
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+// السماح بالضغط على Enter
+document.addEventListener('DOMContentLoaded', () => {
+  const passInput = document.getElementById('loginPass');
+  if (passInput) {
+    passInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  }
+  const userInput = document.getElementById('loginUser');
+  if (userInput) {
+    userInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('loginPass').focus();
+    });
+  }
+});
+
+// تسجيل الخروج
+function logout() {
+  currentRole = null;
+  document.body.classList.remove('worker-mode');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-login').classList.add('active');
+}
+
 // ===== SUPABASE CONFIG =====
 const SUPABASE_URL = 'https://rlohlwldezrrlabpepoo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsb2hsd2xkZXpycmxhYnBlcG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNzQ2NzMsImV4cCI6MjA5NDc1MDY3M30.ydzy6pP92J6K1a6duaU0BH4Va5BmmN2YrvhVlMALnNs';
@@ -1048,8 +1151,7 @@ function showLoading(show) {
   el.style.display = show ? 'flex' : 'none';
 }
 
-// تشغيل عند فتح الصفحة
-window.addEventListener('load', loadAllData);
+// البيانات تتحمل بعد تسجيل الدخول
 
 
 // SLIDER REMOVED - no-op
