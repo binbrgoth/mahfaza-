@@ -1534,7 +1534,10 @@ let asnafSortAZ = false;
 
 function renderAsnaf() {
   const items = Object.values(itemsDB);
-  const search = (document.getElementById('asnafSearchInput')?.value || '').toLowerCase();
+  console.log('renderAsnaf: items count =', items.length, 'itemsDB keys =', Object.keys(itemsDB));
+  const searchEl = document.getElementById('asnafSearchInput');
+  const search = (searchEl?.value || '').toLowerCase().trim();
+  console.log('search term:', search);
 
   let filtered = items.filter(i => {
     if (!search) return true;
