@@ -175,9 +175,25 @@ body {
 .coming-sub { font-size: 14px; color: var(--gray); }
 
 /* BAYYANAT PAGE */
+.idara-teal { background: linear-gradient(145deg, #0e9c87, #0e7c6b); box-shadow: 0 4px 16px rgba(14,124,107,0.35); }
 .idara-blue2 { background: linear-gradient(145deg, #0288d1, #01579b); box-shadow: 0 4px 16px rgba(2,136,209,0.35); }
 .export-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1a2340; color: white; padding: 14px 24px; border-radius: 50px; display: flex; align-items: center; gap: 10px; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 500; animation: fadeUp 0.3s ease; }
 .export-toast-icon { font-size: 20px; }
+
+/* TOTAL TABLE */
+.total-table { width:100%; border-collapse:collapse; font-family:'Cairo',sans-serif; font-size:11px; min-width:600px; }
+.total-table th { background:var(--dark); color:white; padding:8px 6px; text-align:center; font-weight:800; font-size:10px; white-space:nowrap; position:sticky; top:0; }
+.total-table td { padding:7px 6px; text-align:center; border-bottom:1px solid #f0f4ff; color:var(--dark); font-weight:600; white-space:nowrap; }
+.total-table tr:nth-child(even) td { background:#f8faff; }
+.total-table tfoot td { background:var(--dark); color:white; font-weight:900; padding:9px 6px; font-size:11px; }
+.total-table .t-plus { color:#0e7c6b; font-weight:900; }
+.total-table .t-minus { color:#e53935; font-weight:900; }
+.total-table .t-zero { color:var(--gray); }
+.total-table .badge { padding:2px 8px; border-radius:20px; font-size:9px; font-weight:800; }
+.badge-match { background:#e8f5e9; color:#2e7d32; }
+.badge-plus { background:#e8f0ff; color:#1a3fa8; }
+.badge-minus { background:#ffeaea; color:#c62828; }
+.badge-none { background:#f0f4ff; color:#6b7a99; }
 
 /* IDARA PAGE */
 .idara-grid { padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -814,6 +830,10 @@ body {
       <div class="idara-icon">📊</div>
       <div class="idara-label">الاحصائية</div>
     </div>
+    <div class="idara-card idara-teal idara-wide" onclick="showIdaraSection('اجمالي')">
+      <div class="idara-icon">📑</div>
+      <div class="idara-label">إجمالي الأصناف</div>
+    </div>
   </div>
 
   <div class="spacer"></div>
@@ -825,6 +845,28 @@ body {
     <button class="back-btn" onclick="goTo('ادارة')">→</button>
     <div class="page-title" id="idaraResultTitle">—</div>
     <div class="idara-count-badge" id="idaraCountBadge"></div>
+  </div>
+
+  <!-- إجمالي الأصناف -->
+  <div id="totalSection" style="display:none; padding-bottom:90px;">
+    <div style="overflow-x:auto; padding:12px 0;">
+      <table class="total-table" id="totalTable">
+        <thead>
+          <tr>
+            <th>الكود</th>
+            <th>اسم الصنف</th>
+            <th>الدفتري</th>
+            <th>الفعلي</th>
+            <th>زائد</th>
+            <th>ناقص</th>
+            <th>الحالة</th>
+            <th>التكلفة</th>
+          </tr>
+        </thead>
+        <tbody id="totalTableBody"></tbody>
+        <tfoot id="totalTableFoot"></tfoot>
+      </table>
+    </div>
   </div>
 
   <!-- احصائية -->
@@ -1516,6 +1558,10 @@ function showIdaraSection(type) {
     renderStats(items);
     return;
   }
+  if (type === 'اجمالي') {
+    renderTotalSection(items);
+    return;
+  }
 
   const titles = {
     'غير-مجرودة': 'الاصناف الغير مجرودة',
@@ -1528,6 +1574,7 @@ function showIdaraSection(type) {
   document.getElementById('idaraResultTitle').textContent = title;
   document.getElementById('idaraCountBadge').textContent = filtered.length;
   document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('totalSection').style.display = 'none';
   document.getElementById('idaraItemsList').style.display = 'block';
 
   const list = document.getElementById('idaraList');
@@ -1581,6 +1628,7 @@ function renderStats(items) {
   document.getElementById('idaraCountBadge').textContent = '';
   document.getElementById('statsSection').style.display = 'block';
   document.getElementById('idaraItemsList').style.display = 'none';
+  document.getElementById('totalSection').style.display = 'none';
 
   let totalPlus = 0, totalMinus = 0;
   let countCounted = 0, countMatch = 0, countPlus = 0, countMinus = 0, countNot = 0;
