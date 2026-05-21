@@ -269,6 +269,11 @@ body {
 .item-row-diff-val.neg { color:#e53935; }
 .item-row-diff-val.zero { color:var(--gray); }
 
+.options-btn { width:100%; padding:14px; border-radius:14px; border:none; font-family:'Cairo',sans-serif; font-size:15px; font-weight:800; cursor:pointer; text-align:center; transition:all 0.2s; }
+.options-jareed { background:#eef2ff; color:var(--blue2); }
+.options-edit { background:#e8f5e9; color:#2e7d32; }
+.options-delete { background:#ffeaea; color:#c62828; }
+.options-btn:active { transform:scale(0.97); }
 .btn-add-item { position:fixed; bottom:80px; right:50%; transform:translateX(50%); max-width:200px; width:calc(100% - 120px); padding:14px 20px; border-radius:50px; border:none; background:linear-gradient(135deg,var(--blue2),var(--blue1)); color:white; font-family:'Cairo',sans-serif; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 6px 20px rgba(36,81,200,0.4); display:flex; align-items:center; justify-content:center; gap:8px; z-index:50; }
 
 .add-field { display:flex; flex-direction:column; gap:6px; }
@@ -483,6 +488,66 @@ body {
   <button class="btn-add-item" onclick="openAddItem()">
     <span>+</span> إضافة صنف
   </button>
+
+  <!-- مودال خيارات الصنف -->
+  <div class="modal-overlay" id="itemOptionsModal">
+    <div class="modal-box" style="border-radius:20px 20px 0 0;">
+      <div class="modal-head">
+        <div class="modal-title" id="optionsItemName">خيارات الصنف</div>
+        <button class="modal-close" onclick="closeItemOptions()">✕</button>
+      </div>
+      <div style="padding:12px 16px 24px; display:flex; flex-direction:column; gap:10px;">
+        <button class="options-btn options-jareed" onclick="goToJareedFromOptions()">
+          📋 جرد هذا الصنف
+        </button>
+        <button class="options-btn options-edit" onclick="openEditItem()">
+          ✏️ تعديل بيانات الصنف
+        </button>
+        <button class="options-btn options-delete" onclick="deleteItem()">
+          🗑️ حذف الصنف
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تعديل صنف -->
+  <div class="modal-overlay" id="editItemModal">
+    <div class="modal-box" style="border-radius:20px; margin:20px; max-height:85vh; overflow-y:auto;">
+      <div class="modal-head">
+        <div class="modal-title">✏️ تعديل الصنف</div>
+        <button class="modal-close" onclick="closeEditItem()">✕</button>
+      </div>
+      <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div class="add-field">
+          <label class="add-label">كود الصنف</label>
+          <input type="text" id="editCode" class="add-input" disabled style="background:#f0f4ff; color:#6b7a99;">
+        </div>
+        <div class="add-field">
+          <label class="add-label">اسم الصنف *</label>
+          <input type="text" id="editName" class="add-input" placeholder="اسم الصنف">
+        </div>
+        <div class="add-field">
+          <label class="add-label">المخزن</label>
+          <input type="text" id="editStore" class="add-input" placeholder="1">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="add-field">
+            <label class="add-label">سعر البيع</label>
+            <input type="number" id="editSell" class="add-input" placeholder="0.000">
+          </div>
+          <div class="add-field">
+            <label class="add-label">سعر الشراء</label>
+            <input type="number" id="editBuy" class="add-input" placeholder="0.000">
+          </div>
+        </div>
+        <div class="add-field">
+          <label class="add-label">الكمية الدفترية</label>
+          <input type="number" id="editActual" class="add-input" placeholder="0">
+        </div>
+        <button class="btn-save-add" onclick="saveEditItem()">💾 حفظ التعديلات</button>
+      </div>
+    </div>
+  </div>
 
   <!-- مودال إضافة صنف -->
   <div class="modal-overlay" id="addItemModal">
@@ -1389,7 +1454,7 @@ function renderAsnaf() {
     const diffSign = diff > 0 ? '+' : '';
     const diffValSign = diffVal > 0 ? '+' : '';
     return `
-        <div class="item-row-card" onclick="openItemDetail('${item.code}')">
+        <div class="item-row-card" onclick="showItemOptions('${item.code}')">
         <div class="item-row-card-header">
           <div class="item-row-name">${item.name}</div>
           <div class="item-row-code">${item.code}</div>
@@ -1417,13 +1482,7 @@ function sortAsnaf() {
   renderAsnaf();
 }
 
-function openItemDetail(code) {
-  goTo('جرد');
-  setTimeout(() => {
-    document.getElementById('scanSection').style.display = 'none';
-    loadItem(code);
-  }, 100);
-}
+
 
 function openAddItem() {
   document.getElementById('addCode').value = '';
@@ -1709,6 +1768,97 @@ function showExportToast(msg) {
   toast.style.display = 'flex';
   setTimeout(() => toast.style.display = 'none', 3000);
 }
+
+
+// ===== ITEM OPTIONS =====
+let currentOptionsCode = null;
+
+function showItemOptions(code) {
+  currentOptionsCode = code;
+  const item = itemsDB[code];
+  if (!item) return;
+  document.getElementById('optionsItemName').textContent = item.name;
+  document.getElementById('itemOptionsModal').classList.add('open');
+}
+
+function closeItemOptions() {
+  document.getElementById('itemOptionsModal').classList.remove('open');
+  currentOptionsCode = null;
+}
+
+function goToJareedFromOptions() {
+  closeItemOptions();
+  goTo('جرد');
+  setTimeout(() => {
+    document.getElementById('scanSection').style.display = 'none';
+    loadItem(currentOptionsCode || '');
+  }, 100);
+}
+
+function openEditItem() {
+  const code = currentOptionsCode;
+  const item = itemsDB[code];
+  if (!item) return;
+  document.getElementById('editCode').value = code;
+  document.getElementById('editName').value = item.name;
+  document.getElementById('editStore').value = item.store || '1';
+  document.getElementById('editSell').value = item.sellPrice || 0;
+  document.getElementById('editBuy').value = item.buyPrice || 0;
+  document.getElementById('editActual').value = item.actual || 0;
+  document.getElementById('itemOptionsModal').classList.remove('open');
+  document.getElementById('editItemModal').classList.add('open');
+}
+
+function closeEditItem() {
+  document.getElementById('editItemModal').classList.remove('open');
+}
+
+async function saveEditItem() {
+  const code = document.getElementById('editCode').value;
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { alert('اسم الصنف مطلوب'); return; }
+
+  try {
+    const item = {
+      code,
+      name,
+      store: document.getElementById('editStore').value.trim() || '1',
+      sell_price: parseFloat(document.getElementById('editSell').value) || 0,
+      buy_price: parseFloat(document.getElementById('editBuy').value) || 0,
+      actual: parseFloat(document.getElementById('editActual').value) || 0,
+    };
+    await sb.upsert('items', item);
+    itemsDB[code] = { code, name, store: item.store, actual: item.actual, sellPrice: item.sell_price, buyPrice: item.buy_price };
+    closeEditItem();
+    renderAsnaf();
+    currentOptionsCode = null;
+  } catch(e) { alert('خطأ: ' + e.message); }
+}
+
+async function deleteItem() {
+  const code = currentOptionsCode;
+  const item = itemsDB[code];
+  if (!item) return;
+  if (!confirm('هل تريد حذف الصنف: ' + item.name + '؟')) return;
+
+  try {
+    await sb.delete('items', 'code=eq.' + encodeURIComponent(code));
+    // حذف جرد الصنف أيضاً
+    await sb.delete('jareed', 'item_code=eq.' + encodeURIComponent(code));
+    delete itemsDB[code];
+    delete jareedHistory[code];
+    closeItemOptions();
+    renderAsnaf();
+  } catch(e) { alert('خطأ في الحذف: ' + e.message); }
+}
+
+document.getElementById('itemOptionsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeItemOptions();
+});
+
+document.getElementById('editItemModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditItem();
+});
 
 
 </script>
